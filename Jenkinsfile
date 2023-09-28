@@ -32,7 +32,7 @@ pipeline {
     
     stage('Docker Image Creation') {
       steps {
-        sh 'docker build -t aravindmurugesan/banking:latest .'
+        sh 'docker build -t arvindmurugesan/banking:latest .'
             }
     }
     stage('DockerLogin') {
@@ -45,7 +45,7 @@ pipeline {
 
     stage('Push Image to DockerHub') {
       steps {
-        sh 'docker push aravindmurugesan/banking:latest'
+        sh 'docker push arvindmurugesan/banking:latest'
             }
     }
         stage ('Configure Test-server with Terraform, Ansible and then Deploying'){
