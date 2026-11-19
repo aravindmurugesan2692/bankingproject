@@ -8,6 +8,7 @@ import type {
   IncidentAnalysis,
   IncidentCreatePayload,
   IncidentCreateResponse,
+  PagerDutyNotification,
   SupportTeam,
 } from '../types'
 
@@ -114,4 +115,17 @@ export function rejectIncident(
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export function listPagerDutyNotifications(): Promise<PagerDutyNotification[]> {
+  return request<PagerDutyNotification[]>('/pagerduty/notifications')
+}
+
+export function acknowledgePagerDuty(
+  notificationId: number,
+): Promise<PagerDutyNotification> {
+  return request<PagerDutyNotification>(
+    `/pagerduty/notifications/${notificationId}/acknowledge`,
+    { method: 'POST' },
+  )
 }

@@ -34,8 +34,13 @@ class Settings(BaseSettings):
     servicenow_timeout_seconds: float = 30.0
     servicenow_max_retries: int = 2
 
-    # Later phases
+    # PagerDuty (Phase 4) — live only when MOCK_MODE=false and API key set
+    pagerduty_api_key: str = ""
+    pagerduty_api_url: str = "https://api.pagerduty.com"
+    # Legacy alias accepted via env PAGERDUTY_API_TOKEN if key empty
     pagerduty_api_token: str = ""
+    pagerduty_timeout_seconds: float = 30.0
+
     microsoft_tenant_id: str = ""
     microsoft_client_id: str = ""
     microsoft_client_secret: str = ""
@@ -64,6 +69,18 @@ class Settings(BaseSettings):
     @property
     def use_live_servicenow(self) -> bool:
         return (not self.mock_mode) and self.servicenow_configured
+
+    @property
+    def pagerduty_key(self) -> str:
+        return (self.pagerduty_api_key or self.pagerduty_api_token or "").strip()
+
+    @property
+    def pagerduty_configured(self) -> bool:
+        return bool(self.pagerduty_key)
+
+    @property
+    def use_live_pagerduty(self) -> bool:
+        return (not self.mock_mode) and self.pagerduty_configured
 
 
 @lru_cache

@@ -128,6 +128,7 @@ export interface ApprovalDecisionResponse {
   servicenow_sys_id: string | null
   servicenow_is_mock: boolean
   servicenow_duplicate: boolean
+  pagerduty_notifications?: PagerDutyNotification[]
   audit_trail: ApprovalAuditEvent[]
 }
 
@@ -182,8 +183,29 @@ export interface DashboardBundle {
     team: string
     incident_id: string
     wait_minutes: number
+    status?: string
+    pd_incident_id?: string
     mock: boolean
   }>
+  pagerduty_notifications?: PagerDutyNotification[]
   mock_mode: boolean
   data_label: string
+}
+
+export interface PagerDutyNotification {
+  id: number
+  incident_id: number
+  occ_incident_id: string
+  servicenow_number: string | null
+  team_slug: string
+  team_name: string
+  pagerduty_service_id: string
+  pagerduty_escalation_policy_id: string
+  pd_incident_id: string
+  pd_incident_url: string
+  escalation_status: string
+  notified_at: string
+  acknowledged_at: string | null
+  is_mock: boolean
+  created_at: string
 }

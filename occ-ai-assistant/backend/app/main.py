@@ -1,4 +1,4 @@
-"""OCC AI Assistant FastAPI application — Phase 3."""
+"""OCC AI Assistant FastAPI application — Phase 4."""
 
 from contextlib import asynccontextmanager
 
@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import SessionLocal, init_db
-from app.routers import analysis, approvals, dashboard, health, incidents, teams
+from app.routers import analysis, approvals, dashboard, health, incidents, pagerduty, teams
 from app.seed import seed_if_empty
 
 
@@ -28,8 +28,8 @@ def create_app() -> FastAPI:
     settings = get_settings()
     application = FastAPI(
         title=settings.app_name,
-        version="0.3.0",
-        description="Enterprise OCC incident & bridge platform (Phase 3 — approvals + ServiceNow)",
+        version="0.4.0",
+        description="Enterprise OCC incident & bridge platform (Phase 4 — PagerDuty)",
         lifespan=lifespan,
     )
     application.add_middleware(
@@ -44,6 +44,7 @@ def create_app() -> FastAPI:
     application.include_router(incidents.router, prefix=prefix)
     application.include_router(analysis.router, prefix=prefix)
     application.include_router(approvals.router, prefix=prefix)
+    application.include_router(pagerduty.router, prefix=prefix)
     application.include_router(teams.router, prefix=prefix)
     application.include_router(dashboard.router, prefix=prefix)
     return application

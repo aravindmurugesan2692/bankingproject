@@ -109,7 +109,10 @@ export function DashboardPage() {
             <Link className="font-medium text-teal-800 underline" to="/approvals">
               Approvals
             </Link>{' '}
-            (ServiceNow on approve)
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/pagerduty">
+              PagerDuty
+            </Link>
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -261,20 +264,60 @@ export function DashboardPage() {
         <section className="rounded-xl border border-[var(--color-slate-line)] bg-white/95 shadow-sm">
           <div className="flex items-center justify-between border-b border-[var(--color-slate-line)] px-4 py-3">
             <h3 className="text-sm font-semibold">Pending acknowledgements</h3>
-            <MockBadge />
+            <Link to="/pagerduty" className="text-xs font-medium text-teal-800 underline">
+              PagerDuty
+            </Link>
           </div>
           <ul className="divide-y divide-[var(--color-slate-line)]">
             {data.pending_acknowledgements.map((row) => (
-              <li key={`${row.team}-${row.incident_id}`} className="px-4 py-3 text-sm">
+              <li key={`${row.team}-${row.incident_id}-${row.pd_incident_id || ''}`} className="px-4 py-3 text-sm">
                 <p className="font-medium">{row.team}</p>
                 <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">
                   {row.incident_id} · waiting {row.wait_minutes} min
+                  {row.pd_incident_id ? ` · ${row.pd_incident_id}` : ''}
+                  {row.mock ? ' · MOCK' : ''}
                 </p>
               </li>
             ))}
           </ul>
         </section>
       </div>
+
+      {(data.pagerduty_notifications?.length ?? 0) > 0 && (
+        <section className="rounded-xl border border-[var(--color-slate-line)] bg-white/95 shadow-sm">
+          <div className="flex items-center justify-between border-b border-[var(--color-slate-line)] px-4 py-3">
+            <h3 className="text-sm font-semibold">PagerDuty notification status</h3>
+            <MockBadge />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-[var(--color-slate-panel)] text-xs text-[var(--color-muted)]">
+                <tr>
+                  <th className="px-4 py-2 font-medium">OCC</th>
+                  <th className="px-4 py-2 font-medium">SN</th>
+                  <th className="px-4 py-2 font-medium">Team</th>
+                  <th className="px-4 py-2 font-medium">PD ID</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.pagerduty_notifications!.slice(0, 8).map((row) => (
+                  <tr key={row.id} className="border-t border-[var(--color-slate-line)]">
+                    <td className="px-4 py-2 font-mono text-xs">{row.occ_incident_id}</td>
+                    <td className="px-4 py-2 font-mono text-xs">{row.servicenow_number || '—'}</td>
+                    <td className="px-4 py-2">{row.team_name}</td>
+                    <td className="px-4 py-2 font-mono text-xs">
+                      {row.pd_incident_id}
+                      {row.is_mock && <span className="ml-1 text-amber-700">MOCK</span>}
+                    </td>
+                    <td className="px-4 py-2 text-xs font-semibold">{row.escalation_status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-xl border border-[var(--color-slate-line)] bg-white/95 shadow-sm">
         <div className="flex items-center justify-between border-b border-[var(--color-slate-line)] px-4 py-3">

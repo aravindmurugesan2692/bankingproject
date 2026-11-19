@@ -15,4 +15,5 @@ def health() -> HealthResponse:
         mock_mode=settings.mock_mode,
         llm_configured=bool(settings.openai_api_key.strip()),
         servicenow_configured=settings.servicenow_configured,
+        pagerduty_configured=settings.pagerduty_configured,
     )
