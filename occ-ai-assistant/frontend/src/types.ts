@@ -178,6 +178,8 @@ export interface DashboardBundle {
     participants: number
     status: string
     mock: boolean
+    meeting_url?: string
+    bridge_id?: number
   }>
   pending_acknowledgements: Array<{
     team: string
@@ -188,8 +190,35 @@ export interface DashboardBundle {
     mock: boolean
   }>
   pagerduty_notifications?: PagerDutyNotification[]
+  teams_bridges?: TeamsBridge[]
   mock_mode: boolean
   data_label: string
+}
+
+export interface TeamsBridge {
+  id: number
+  incident_id: number
+  occ_incident_id: string
+  servicenow_number: string | null
+  bridge_code: string
+  title: string
+  provider: string
+  meeting_id: string
+  meeting_url: string
+  status: string
+  created_at: string
+  started_at: string | null
+  ended_at: string | null
+  invited_responders: Array<{
+    name?: string
+    team_slug?: string
+    email?: string
+    invite_status?: string
+  }>
+  invited_count: number
+  invited_at: string | null
+  is_mock: boolean
+  created_by: string
 }
 
 export interface PagerDutyNotification {

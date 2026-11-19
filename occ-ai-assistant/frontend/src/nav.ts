@@ -30,7 +30,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Incident Management', path: '/management', icon: ListChecks, phaseReady: false },
   { label: 'PagerDuty', path: '/pagerduty', icon: Bell, phaseReady: true },
   { label: 'ServiceNow', path: '/servicenow', icon: ShieldAlert, phaseReady: false },
-  { label: 'Teams Bridge Management', path: '/bridges', icon: Headset, phaseReady: false },
+  { label: 'Teams Bridge Management', path: '/bridges', icon: Headset, phaseReady: true },
   { label: 'Team Participation', path: '/participation', icon: Users, phaseReady: false },
   { label: 'Incident Timeline', path: '/timeline', icon: Activity, phaseReady: false },
   { label: 'AI Incident Reports', path: '/reports', icon: FileText, phaseReady: false },
