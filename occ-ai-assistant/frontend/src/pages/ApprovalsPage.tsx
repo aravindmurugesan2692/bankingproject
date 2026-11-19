@@ -203,7 +203,7 @@ export function ApprovalsPage() {
             approves. ServiceNow is created only after Approve — never before.
           </p>
         </div>
-        <MockBadge label="PHASE 3" />
+        <MockBadge label="PHASE 4" />
       </div>
 
       {error && (
