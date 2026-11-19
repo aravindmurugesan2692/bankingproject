@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-navy-950: #071422;
+  --color-navy-900: #0c1f33;
+  --color-navy-800: #14304c;
+  --color-navy-700: #1c4063;
+  --color-slate-panel: #f3f6f9;
+  --color-slate-line: #d7e0ea;
+  --color-ink: #122033;
+  --color-muted: #5b6b7c;
+  --color-accent: #0e7c86;
+  --color-accent-soft: #d7f1f3;
+  --color-critical: #b42318;
+  --color-high: #c2410c;
+  --color-medium: #a16207;
+  --color-low: #1d6b4f;
+  --color-ok: #0f766e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(14, 124, 134, 0.08), transparent 55%),
+    radial-gradient(900px 500px at -10% 20%, rgba(20, 48, 76, 0.07), transparent 50%),
+    linear-gradient(180deg, #eef3f7 0%, #e7edf3 100%);
+}
+
+.app-shell-bg {
+  background-image:
+    linear-gradient(rgba(18, 32, 51, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 32, 51, 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease-out both;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fade-up 0.45s ease-out 0.06s both;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fade-up 0.45s ease-out 0.12s both;
+}
+
+.live-dot {
+  animation: pulse-soft 1.8s ease-in-out infinite;
+}
