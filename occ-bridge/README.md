@@ -1,12 +1,12 @@
-# OCC Bridge Assist (SAMPLE)
+# OCC Bridge Assist
 
-Sample Operation Center demo for live incident bridges **STS1–STS4**.
+Full Operation Center application for live incident bridges **STS1–STS4**.
 
-OCC operators can open a bridge in the web console (meant to sit beside Teams), walk through issue → priority → mock ServiceNow incident → AI recommendations → OCC approve → mock PagerDuty page, and watch a live timeline update. A **simulated Teams bot chat** is included and labeled as sample until Azure Bot registration exists.
+OCC operators sign in, open a bridge in the web console (meant to sit beside Teams), and/or drive the same flow from the in-app **Teams bot**. Issue → priority → mock ServiceNow incident → AI recommendations → **Approve or Reject** → mock PagerDuty page → audit timeline. Session history and Teams link config are included.
 
-> **SAMPLE / MOCK** — No real ServiceNow, PagerDuty, or Azure Bot calls. Live APIs require management approval.
+> **SAMPLE / MOCK integrations** — No real ServiceNow, PagerDuty, or Azure Bot calls yet. Live APIs require management approval. The product UI and flow are complete; adapters are mocked.
 
-## How to run locally
+## How to run
 
 ```bash
 cd occ-bridge
@@ -16,67 +16,76 @@ npm run dev
 
 Open the URL Vite prints (default `http://localhost:5173`).
 
-Production build check:
-
 ```bash
 npm run build
 npm run preview
 ```
 
-## Happy path (demo)
+## Operator walkthrough
 
-1. Click **STS1**, **STS2**, **STS3**, or **STS4**.
-2. Timeline shows `Bridge started` and `OCC joined`.
-3. Enter an issue (try keywords like `linux`, `network`, `database`, or `api`).
-4. Choose priority **P1–P4**.
-5. Mock ServiceNow creates `INC…` → timeline updates.
-6. AI stub recommends a team + fix steps.
-7. Click **Approve & page …** (or Approve in the bot shell).
-8. Mock PagerDuty pages the team → timeline shows team involved.
-9. Optional: **Open Teams meeting (placeholder)** uses sample meeting links.
+1. Sign in with an OCC operator name (local auth gate).
+2. On **Bridges**, open STS1–STS4 (or start from **Teams bot**).
+3. In **Workspace**: enter issue → set priority → mock INC created → AI recommends a team.
+4. **Approve** (PagerDuty mock page) or **Reject** (reason logged, no page).
+5. Watch the **timeline** (actor + timestamp + detail).
+6. Optional: open placeholder Teams meeting; edit links under **Config**.
+7. **End bridge** → archived under **History**.
 
-Session state is kept in `localStorage` (`occ-bridge-session-v1`) so a refresh keeps the active bridge. **End bridge** clears it.
+Console and bot share one active session via `src/api/bridgeApi.ts`.
 
-## Surfaces
-
-| Surface | Status |
-|---------|--------|
-| Web console | Implemented (OCC primary UI) |
-| Teams bot chat | Simulated in-browser shell, labeled SAMPLE |
-| Teams meeting links | Placeholders in `src/data/bridges.ts` |
-
-## Mock integrations (swap points)
-
-| Module | Role | Live swap later |
-|--------|------|-----------------|
-| `src/integrations/servicenow.ts` | `createIncident()` returns fake `INC…` | ServiceNow Table / Import Set API |
-| `src/integrations/pagerduty.ts` | `pageTeam()` returns fake page id | Events API v2 / enqueue |
-| `src/integrations/teams.ts` | Placeholder meeting URLs + no-op bot send | Azure Bot + Graph + real STS links |
-| `src/ai/recommend.ts` | Keyword heuristic → Linux / Network / Database / Application | Real LLM / triage service |
-
-Comments at the top of each integration file mark the swap points.
-
-## Project layout
+## Architecture
 
 ```
-occ-bridge/
-  src/
-    ai/recommend.ts
-    components/          # picker, intake, recommendations, timeline, bot shell
-    data/bridges.ts      # STS1–STS4 + placeholder Teams URLs
-    integrations/        # ServiceNow / PagerDuty / Teams mocks
-    pages/ConsolePage.tsx
-    store/sessionStore.ts
+occ-bridge/src/
+  api/bridgeApi.ts          Shared façade (console + bot)
+  store/appStore.ts         Auth, config, active session, history (localStorage)
+  integrations/             Mock adapters (swap for live APIs)
+    servicenow.ts
+    pagerduty.ts
+    teams.ts
+  ai/recommend.ts           Keyword triage stub
+  pages/                    login, home, workspace, bot, history, config
+  components/               intake, incident, recommendations, timeline, TeamsBot
+  config/defaults.ts        Default STS Teams placeholders
+  types.ts                  Typed domain models
 ```
 
-## Out of scope (by design)
+### Routing
 
-- Real credentials / live API traffic
-- Auto-paging without OCC approval
-- Non-OCC / end-user intake
-- More than four bridges
-- Full CMDB enrichment
+| Path | Purpose |
+|------|---------|
+| `/login` | OCC operator sign-in |
+| `/` | Bridge home STS1–4 + recent history |
+| `/workspace` | Active bridge workspace |
+| `/bot` | Full Teams bot experience |
+| `/history` | Past bridge sessions |
+| `/history/:id` | Session detail + timeline |
+| `/config` | Placeholder Teams URLs + swap-point docs |
+
+### Persistence (local)
+
+- `occ-bridge-auth-v2` — signed-in operator
+- `occ-bridge-active-v2` — active bridge session
+- `occ-bridge-history-v2` — closed sessions (max 50)
+- `occ-bridge-config-v2` — Teams meeting URLs
+
+## Mock vs live
+
+| Module | Today | Later |
+|--------|-------|-------|
+| `integrations/servicenow.ts` | Fake `INC…` | Table / Import Set API |
+| `integrations/pagerduty.ts` | Fake page id | Events API v2 |
+| `integrations/teams.ts` | Placeholder links + in-app bot UI | Azure Bot + Graph + real STS URLs |
+| `ai/recommend.ts` | Keyword heuristics | Real LLM / triage |
 
 ## Audience
 
 OCC operators only.
+
+## Out of scope until asked
+
+- Live credentials / production traffic
+- Auto-paging without OCC approval
+- Non-OCC intake UI
+- More than four bridges
+- Full CMDB enrichment

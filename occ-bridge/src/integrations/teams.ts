@@ -1,17 +1,17 @@
 import type { BridgeId } from '../types'
-import { getBridge } from '../data/bridges'
+import { getBridgeConfig } from '../store/appStore'
 
 /**
  * MOCK Teams / Azure Bot integration.
  * Swap point: replace helpers with Azure Bot Framework + Graph
  * after management approves bot registration and real meeting URLs.
  *
- * This sample only simulates the bot chat UI in-browser and opens
- * placeholder meeting links.
+ * The in-app Teams bot UI shares the same session API as the web console.
+ * Meeting links are loaded from app config (editable in Config).
  */
 
 export function getTeamsMeetingUrl(bridgeId: BridgeId): string {
-  const bridge = getBridge(bridgeId)
+  const bridge = getBridgeConfig(bridgeId)
   return bridge?.teamsMeetingUrl ?? '#'
 }
 

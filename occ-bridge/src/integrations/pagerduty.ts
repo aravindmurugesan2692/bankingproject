@@ -20,6 +20,7 @@ export async function pageTeam(input: {
   team: TeamId
   incidentNumber: string
   summary: string
+  requestedBy: string
 }): Promise<PageRecord> {
   await delay(400)
 
@@ -30,6 +31,7 @@ export async function pageTeam(input: {
     team: input.team,
     status: 'triggered',
     createdAt: new Date().toISOString(),
+    requestedBy: input.requestedBy,
   }
 }
 

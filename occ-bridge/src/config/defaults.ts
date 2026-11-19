@@ -1,10 +1,11 @@
 import type { BridgeDefinition } from '../types'
 
 /**
- * Placeholder Teams meeting links until real STS URLs are provided.
- * Swap these values (or load from env) when live links are approved.
+ * Default placeholder Teams meeting links.
+ * Editable at runtime via Config page (persisted in localStorage).
+ * Replace with real STS URLs after management approval.
  */
-export const BRIDGES: BridgeDefinition[] = [
+export const DEFAULT_BRIDGES: BridgeDefinition[] = [
   {
     id: 'STS1',
     name: 'STS1 Bridge',
@@ -31,6 +32,9 @@ export const BRIDGES: BridgeDefinition[] = [
   },
 ]
 
-export function getBridge(id: string): BridgeDefinition | undefined {
-  return BRIDGES.find((b) => b.id === id)
-}
+export const STORAGE = {
+  auth: 'occ-bridge-auth-v2',
+  active: 'occ-bridge-active-v2',
+  history: 'occ-bridge-history-v2',
+  config: 'occ-bridge-config-v2',
+} as const

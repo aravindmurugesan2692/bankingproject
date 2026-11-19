@@ -2,6 +2,7 @@ import type { TimelineEvent } from '../types'
 
 interface Props {
   events: TimelineEvent[]
+  compact?: boolean
 }
 
 function formatTime(iso: string) {
@@ -16,26 +17,35 @@ function formatTime(iso: string) {
   }
 }
 
-export function TimelinePanel({ events }: Props) {
+export function TimelinePanel({ events, compact }: Props) {
   const ordered = [...events].reverse()
 
   return (
-    <section className="panel timeline-panel">
+    <section className={`panel timeline-panel ${compact ? 'is-compact' : ''}`}>
       <header className="panel__header">
         <h2>Live timeline</h2>
-        <p>Minute-by-minute bridge activity (mock).</p>
+        <p>Audit-friendly bridge activity (actor + timestamp).</p>
       </header>
       {ordered.length === 0 ? (
-        <p className="empty">Open a bridge to start the timeline.</p>
+        <p className="empty">No events yet.</p>
       ) : (
         <ol className="timeline">
           {ordered.map((evt) => (
-            <li key={evt.id} className={`timeline__item timeline__item--${evt.kind}`}>
+            <li
+              key={evt.id}
+              className={`timeline__item timeline__item--${evt.kind}`}
+            >
               <time dateTime={evt.at}>{formatTime(evt.at)}</time>
               <span className="timeline__dot" aria-hidden />
               <div>
                 <strong>{evt.label}</strong>
-                <span className="timeline__kind">{evt.kind}</span>
+                <div className="timeline__meta">
+                  <span className="timeline__kind">{evt.kind}</span>
+                  <span className="timeline__actor">by {evt.actor}</span>
+                </div>
+                {evt.detail ? (
+                  <p className="timeline__detail">{evt.detail}</p>
+                ) : null}
               </div>
             </li>
           ))}

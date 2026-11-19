@@ -8,23 +8,31 @@ export type FlowStep =
   | 'idle'
   | 'awaiting_issue'
   | 'awaiting_priority'
-  | 'incident_created'
+  | 'creating_incident'
+  | 'analyzing'
   | 'recommendations_ready'
   | 'team_paged'
+  | 'rejected'
   | 'closed'
+
+export type TimelineKind =
+  | 'bridge'
+  | 'occ'
+  | 'incident'
+  | 'ai'
+  | 'pagerduty'
+  | 'teams'
+  | 'system'
+  | 'audit'
 
 export interface TimelineEvent {
   id: string
   at: string
   label: string
-  kind:
-    | 'bridge'
-    | 'occ'
-    | 'incident'
-    | 'ai'
-    | 'pagerduty'
-    | 'teams'
-    | 'system'
+  kind: TimelineKind
+  /** Operator or system actor for audit trail */
+  actor: string
+  detail?: string
 }
 
 export interface Recommendation {
@@ -39,7 +47,9 @@ export interface IncidentRecord {
   sysId: string
   shortDescription: string
   priority: Priority
+  bridgeId: BridgeId
   createdAt: string
+  createdBy: string
 }
 
 export interface PageRecord {
@@ -47,20 +57,24 @@ export interface PageRecord {
   team: TeamId
   status: 'triggered' | 'acknowledged'
   createdAt: string
+  requestedBy: string
 }
 
 export interface BridgeSession {
   id: string
   bridgeId: BridgeId
   startedAt: string
+  endedAt?: string
   step: FlowStep
+  operator: string
   issue?: string
   priority?: Priority
   incident?: IncidentRecord
   recommendation?: Recommendation
   page?: PageRecord
   timeline: TimelineEvent[]
-  approved: boolean
+  decision?: 'approved' | 'rejected'
+  rejectionReason?: string
 }
 
 export interface BridgeDefinition {
@@ -68,4 +82,14 @@ export interface BridgeDefinition {
   name: string
   description: string
   teamsMeetingUrl: string
+}
+
+export interface OccOperator {
+  name: string
+  signedInAt: string
+}
+
+export interface AppConfig {
+  bridges: BridgeDefinition[]
+  mockMode: true
 }

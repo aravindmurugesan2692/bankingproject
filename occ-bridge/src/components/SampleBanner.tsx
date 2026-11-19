@@ -3,8 +3,8 @@ export function SampleBanner() {
     <div className="sample-banner" role="status">
       <span className="sample-banner__tag">SAMPLE / MOCK</span>
       <span>
-        OCC Bridge Assist demo — ServiceNow, PagerDuty, and Teams bot are mocked.
-        Live APIs pending management approval.
+        Full OCC Bridge Assist app — ServiceNow, PagerDuty, and Azure Bot are
+        mocked until management approves live APIs.
       </span>
     </div>
   )

@@ -1,4 +1,4 @@
-import type { IncidentRecord, Priority } from '../types'
+import type { BridgeId, IncidentRecord, Priority } from '../types'
 
 /**
  * MOCK ServiceNow integration.
@@ -12,7 +12,8 @@ import type { IncidentRecord, Priority } from '../types'
 export async function createIncident(input: {
   shortDescription: string
   priority: Priority
-  bridgeId: string
+  bridgeId: BridgeId
+  createdBy: string
 }): Promise<IncidentRecord> {
   await delay(450)
 
@@ -24,7 +25,9 @@ export async function createIncident(input: {
     sysId: `mock-sys-${seq}`,
     shortDescription: `[${input.bridgeId}] ${input.shortDescription}`,
     priority: input.priority,
+    bridgeId: input.bridgeId,
     createdAt: new Date().toISOString(),
+    createdBy: input.createdBy,
   }
 }
 

@@ -1,12 +1,21 @@
+import { useState } from 'react'
 import type { BridgeSession } from '../types'
 
 interface Props {
   session: BridgeSession
   busy: boolean
   onApprove: () => void
+  onReject: (reason: string) => void
 }
 
-export function RecommendationsPanel({ session, busy, onApprove }: Props) {
+export function RecommendationsPanel({
+  session,
+  busy,
+  onApprove,
+  onReject,
+}: Props) {
+  const [reason, setReason] = useState('')
+  const [showReject, setShowReject] = useState(false)
   const rec = session.recommendation
 
   if (!rec) {
@@ -16,16 +25,22 @@ export function RecommendationsPanel({ session, busy, onApprove }: Props) {
           <h2>AI recommendations</h2>
           <p>Recommendations appear after the incident is created.</p>
         </header>
-        <p className="empty">Waiting for intake…</p>
+        <p className="empty">
+          {session.step === 'analyzing'
+            ? 'Analyzing issue…'
+            : 'Waiting for intake…'}
+        </p>
       </section>
     )
   }
+
+  const decided = Boolean(session.decision)
 
   return (
     <section className="panel recommendations-panel">
       <header className="panel__header">
         <h2>AI recommendations</h2>
-        <p>Heuristic stub — review before paging a team.</p>
+        <p>Heuristic stub — OCC must Approve or Reject before paging.</p>
       </header>
 
       <div className="rec-summary">
@@ -46,21 +61,66 @@ export function RecommendationsPanel({ session, busy, onApprove }: Props) {
         ))}
       </ol>
 
-      {session.approved ? (
+      {session.decision === 'approved' && session.page ? (
         <div className="approve-done">
-          Engagement approved. {session.page?.team} paged via mock PagerDuty (
-          {session.page?.pageId}).
+          Approved by {session.operator}. {session.page.team} paged via mock
+          PagerDuty ({session.page.pageId}).
         </div>
-      ) : (
-        <button
-          type="button"
-          className="approve-btn"
-          disabled={busy || session.step !== 'recommendations_ready'}
-          onClick={onApprove}
+      ) : null}
+
+      {session.decision === 'rejected' ? (
+        <div className="reject-done">
+          Rejected by {session.operator}. Reason:{' '}
+          {session.rejectionReason ?? '—'}
+        </div>
+      ) : null}
+
+      {!decided && session.step === 'recommendations_ready' ? (
+        <div className="decision-actions">
+          <button
+            type="button"
+            className="approve-btn"
+            disabled={busy}
+            onClick={onApprove}
+          >
+            {busy ? 'Paging team…' : `Approve & page ${rec.team}`}
+          </button>
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy}
+            onClick={() => setShowReject((v) => !v)}
+          >
+            Reject
+          </button>
+        </div>
+      ) : null}
+
+      {showReject && !decided ? (
+        <form
+          className="reject-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            onReject(reason)
+            setShowReject(false)
+          }}
         >
-          {busy ? 'Paging team…' : `Approve & page ${rec.team} (mock PagerDuty)`}
-        </button>
-      )}
+          <label htmlFor="reject-reason">
+            Rejection reason
+            <textarea
+              id="reject-reason"
+              rows={2}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Wrong team — waiting on more diagnostics"
+              disabled={busy}
+            />
+          </label>
+          <button type="submit" className="danger-btn" disabled={busy}>
+            Confirm reject
+          </button>
+        </form>
+      ) : null}
     </section>
   )
 }

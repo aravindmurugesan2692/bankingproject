@@ -23,7 +23,7 @@ export function IntakePanel({
     return (
       <section className="panel intake-panel">
         <header className="panel__header">
-          <h2>Describe the issue</h2>
+          <h2>Issue intake</h2>
           <p>What is happening on this bridge?</p>
         </header>
         <form
@@ -53,12 +53,16 @@ export function IntakePanel({
     )
   }
 
-  if (session.step === 'awaiting_priority') {
+  if (
+    session.step === 'awaiting_priority' ||
+    session.step === 'creating_incident' ||
+    session.step === 'analyzing'
+  ) {
     return (
       <section className="panel intake-panel">
         <header className="panel__header">
           <h2>Set priority</h2>
-          <p>Confirm incident priority before creating the ServiceNow ticket.</p>
+          <p>Confirm priority before creating the ServiceNow incident.</p>
         </header>
         <div className="issue-preview">
           <span className="muted">Issue</span>
@@ -68,11 +72,14 @@ export function IntakePanel({
           className="intake-form"
           onSubmit={(e) => {
             e.preventDefault()
-            if (busy) return
+            if (busy || session.step !== 'awaiting_priority') return
             onSubmitPriority(priority)
           }}
         >
-          <fieldset className="priority-set" disabled={busy}>
+          <fieldset
+            className="priority-set"
+            disabled={busy || session.step !== 'awaiting_priority'}
+          >
             <legend>Priority</legend>
             <div className="priority-options">
               {PRIORITIES.map((p) => (
@@ -89,8 +96,15 @@ export function IntakePanel({
               ))}
             </div>
           </fieldset>
-          <button type="submit" disabled={busy}>
-            {busy ? 'Creating incident…' : 'Create ServiceNow incident (mock)'}
+          <button
+            type="submit"
+            disabled={busy || session.step !== 'awaiting_priority'}
+          >
+            {session.step === 'creating_incident'
+              ? 'Creating incident…'
+              : session.step === 'analyzing'
+                ? 'Running AI triage…'
+                : 'Create ServiceNow incident (mock)'}
           </button>
         </form>
       </section>
@@ -105,6 +119,10 @@ export function IntakePanel({
       </header>
       <dl className="kv">
         <div>
+          <dt>Operator</dt>
+          <dd>{session.operator}</dd>
+        </div>
+        <div>
           <dt>Issue</dt>
           <dd>{session.issue}</dd>
         </div>
@@ -112,14 +130,6 @@ export function IntakePanel({
           <dt>Priority</dt>
           <dd>{session.priority}</dd>
         </div>
-        {session.incident && (
-          <div>
-            <dt>Incident</dt>
-            <dd>
-              {session.incident.number} · {session.incident.priority}
-            </dd>
-          </div>
-        )}
       </dl>
     </section>
   )
