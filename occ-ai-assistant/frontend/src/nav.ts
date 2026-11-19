@@ -26,7 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard, phaseReady: true },
   { label: 'Initiate Incident', path: '/initiate', icon: PlusCircle, phaseReady: true },
   { label: 'Incident Analysis', path: '/analysis', icon: BarChart3, phaseReady: true },
-  { label: 'Incident Approvals', path: '/approvals', icon: ClipboardCheck, phaseReady: false },
+  { label: 'Incident Approvals', path: '/approvals', icon: ClipboardCheck, phaseReady: true },
   { label: 'Incident Management', path: '/management', icon: ListChecks, phaseReady: false },
   { label: 'PagerDuty', path: '/pagerduty', icon: Bell, phaseReady: false },
   { label: 'ServiceNow', path: '/servicenow', icon: ShieldAlert, phaseReady: false },

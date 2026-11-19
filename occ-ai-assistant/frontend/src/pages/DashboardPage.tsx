@@ -105,7 +105,11 @@ export function DashboardPage() {
             <Link className="font-medium text-teal-800 underline" to="/teams-config">
               Support teams
             </Link>{' '}
-            · Approvals / ServiceNow land in Phase 3
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/approvals">
+              Approvals
+            </Link>{' '}
+            (ServiceNow on approve)
           </p>
         </div>
         <div className="flex items-center gap-3">

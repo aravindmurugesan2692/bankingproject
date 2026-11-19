@@ -29,7 +29,7 @@ def test_create_incident_success(client):
     assert data["title"] == "ATM network outage at Region West"
     assert data["environment"] == "Production"
     assert data["users_affected"] == 150
-    assert data["status"] == "Analyzed"
+    assert data["status"] == "Pending Approval"
     assert data["occ_incident_id"].startswith("OCC-")
     assert data["is_mock"] is False
     assert data["id"] >= 1

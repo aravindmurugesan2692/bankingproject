@@ -19,7 +19,7 @@ export function AppShell() {
             Operations Control Center
           </p>
           <h1 className="mt-1 text-xl font-bold tracking-tight text-white">OCC AI Assistant</h1>
-          <p className="mt-2 text-xs text-slate-400">Phase 2 · AI analysis</p>
+          <p className="mt-2 text-xs text-slate-400">Phase 3 · Approvals + ServiceNow</p>
           <div className="mt-3">
             <MockBadge label="MOCK MODE" />
           </div>

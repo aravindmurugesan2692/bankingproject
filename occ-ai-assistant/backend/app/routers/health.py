@@ -14,4 +14,5 @@ def health() -> HealthResponse:
         app=settings.app_name,
         mock_mode=settings.mock_mode,
         llm_configured=bool(settings.openai_api_key.strip()),
+        servicenow_configured=settings.servicenow_configured,
     )
