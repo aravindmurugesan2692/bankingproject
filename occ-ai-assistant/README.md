@@ -1,20 +1,22 @@
-# OCC AI Assistant — Phase 3
+# OCC AI Assistant — Phase 4
 
-Full runnable OCC slice through **approvals + ServiceNow (mock by default)**.
+Full runnable OCC slice through **PagerDuty notifications** (MOCK by default).
 
-Phases included: **1 dashboard/initiate**, **2 AI analysis/teams**, **3 OCC approval + ServiceNow**.
+Phases included: 1 dashboard/initiate → 2 AI analysis → 3 approvals + ServiceNow → **4 PagerDuty**.
 
 Banking Java app and `occ-bridge/` are untouched.
 
 ## Workflow
 
-1. **Initiate Incident** → persist + auto AI analysis  
-2. **Incident Analysis** → review hypotheses / recommended teams  
-3. **Incident Approvals** → modify severity / teams / description → **Approve** or **Reject**  
-4. On **Approve only** → create ServiceNow incident (MOCK unless live credentials + `MOCK_MODE=false`)  
-5. Audit trail stores approving user, timestamp, approved teams  
+1. Initiate incident → auto AI analysis  
+2. OCC Approvals → edit severity/teams/description  
+3. **Approve** → ServiceNow create → **PagerDuty page approved teams**  
+4. Track notify/ack timestamps, escalation status, PD id/URL  
+5. Linked IDs: OCC + ServiceNow + PagerDuty  
 
-PagerDuty paging and Teams bridges are **not** started (Phases 4–5).
+**Never pages without explicit OCC approval.** Reject creates no SN and no PD pages.
+
+Teams bridges are Phase 5 (not started).
 
 ## Quick start
 
@@ -26,7 +28,7 @@ pip install -r requirements.txt
 cp ../.env.example .env
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
-# Frontend (other terminal)
+# Frontend
 cd occ-ai-assistant/frontend
 npm install && npm run dev
 # → http://localhost:5173
@@ -38,32 +40,33 @@ npm install && npm run dev
 cd occ-ai-assistant/backend && source .venv/bin/activate && pytest -q
 ```
 
-## ServiceNow behaviour
+## PagerDuty behaviour
 
 | Condition | Result |
 |-----------|--------|
-| `MOCK_MODE=true` (default) or SN not configured | MOCK number + sys_id; labeled mock |
-| `MOCK_MODE=false` + instance/auth configured | Live `POST /api/now/table/incident` with retries |
-| Incident already has `servicenow_sys_id` | Duplicate prevention — return existing |
+| Not OCC-approved | Notify APIs return 400 |
+| `MOCK_MODE=true` or no `PAGERDUTY_API_KEY` | MOCK PD id/URL per team |
+| Live key + `MOCK_MODE=false` | Incidents API create (placeholder service IDs still mock) |
+| Re-notify | Idempotent — existing team pages reused |
 
-Env vars: see `.env.example` (`SERVICENOW_*`).
+Env: `PAGERDUTY_API_KEY`, `PAGERDUTY_API_URL` (see `.env.example`).
 
-## Key APIs (Phase 3)
+## Key APIs
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/approvals` | Approval queue packets |
-| GET | `/api/approvals/{id}` | Packet: incident + analysis + SN preview + PD placeholders + audit |
-| PATCH | `/api/approvals/{id}` | Draft: severity / description / teams |
-| POST | `/api/approvals/{id}/approve` | Approve + create ServiceNow |
-| POST | `/api/approvals/{id}/reject` | Reject with reason (no SN) |
+| GET | `/api/pagerduty/notifications` | All PD pages |
+| GET | `/api/pagerduty/incidents/{id}/notifications` | Pages for one incident |
+| POST | `/api/pagerduty/notifications/{id}/acknowledge` | Record acknowledgement |
+| POST | `/api/pagerduty/incidents/{id}/notify` | Idempotent re-page (approved only) |
+| POST | `/api/approvals/{id}/approve` | Approve → SN → PD pages |
 
 ## Credentials
 
-- **Demo:** none  
-- **Optional LLM:** `OPENAI_API_KEY` + `MOCK_MODE=false`  
-- **Optional live ServiceNow:** instance URL + username/password (or client id/secret) + `MOCK_MODE=false`
+- Demo: none  
+- Optional live PD: `PAGERDUTY_API_KEY` (+ `MOCK_MODE=false`)  
+- Optional live SN / LLM: see earlier phases  
 
 ## Waiting for approval
 
-Do **not** start Phase 4 (PagerDuty) until the user approves Phase 3.
+Do **not** start Phase 5 (Teams bridges) until the user approves Phase 4.

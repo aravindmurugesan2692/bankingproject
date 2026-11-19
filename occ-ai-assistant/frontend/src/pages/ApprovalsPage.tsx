@@ -135,10 +135,12 @@ export function ApprovalsPage() {
         working_description: description,
         selected_team_slugs: teamSlugs,
       })
+      const pdCount = result.pagerduty_notifications?.length ?? 0
       setSuccess(
         `Approved. ServiceNow ${result.servicenow_number}` +
           (result.servicenow_is_mock ? ' (MOCK)' : '') +
-          (result.servicenow_duplicate ? ' — duplicate prevented' : ''),
+          (result.servicenow_duplicate ? ' — duplicate prevented' : '') +
+          (pdCount ? ` · PagerDuty pages: ${pdCount}` : ''),
       )
       await refreshQueue()
       // After approval it leaves the queue — clear selection if gone
@@ -201,7 +203,7 @@ export function ApprovalsPage() {
             approves. ServiceNow is created only after Approve — never before.
           </p>
         </div>
-        <MockBadge label="PHASE 3" />
+        <MockBadge label="PHASE 4" />
       </div>
 
       {error && (
@@ -371,7 +373,7 @@ export function ApprovalsPage() {
 
               <section className="grid gap-4 lg:grid-cols-2">
                 <div className="rounded-xl border border-[var(--color-slate-line)] bg-white/95 p-4 shadow-sm">
-                  <h4 className="text-sm font-semibold">PagerDuty placeholders (no paging yet)</h4>
+                  <h4 className="text-sm font-semibold">PagerDuty targets (paged on approve)</h4>
                   <ul className="mt-3 space-y-2 text-sm">
                     {packet.pagerduty_placeholders.map((pd) => (
                       <li key={pd.slug} className="rounded border border-[var(--color-slate-line)] px-3 py-2">
@@ -386,7 +388,8 @@ export function ApprovalsPage() {
                     )}
                   </ul>
                   <p className="mt-2 text-xs text-[var(--color-muted)]">
-                    Live PagerDuty notifications are Phase 4.
+                    Approve creates ServiceNow then pages these teams (MOCK by default). Never pages
+                    without OCC approval.
                   </p>
                 </div>
 

@@ -1,13 +1,20 @@
 """Dashboard summary and mock-labeled aggregates."""
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
-from app.models import Incident, IncidentPriority, IncidentStatus
-from app.schemas import DashboardBundle, DashboardSummary, IncidentRead
+from app.models import Incident, IncidentPriority, IncidentStatus, PagerDutyNotification
+from app.schemas import (
+    DashboardBundle,
+    DashboardSummary,
+    IncidentRead,
+    PagerDutyNotificationRead,
+)
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -57,7 +64,7 @@ MOCK_ACTIVITIES = [
     {
         "time": "18 min ago",
         "actor": "System",
-        "detail": "MOCK: PagerDuty page queued for Fraud team (pending approval)",
+        "detail": "MOCK: PagerDuty page sent for Fraud Ops after OCC approval",
         "mock": True,
     },
     {
@@ -164,6 +171,34 @@ def dashboard_bundle(db: Session = Depends(get_db)) -> DashboardBundle:
     for row in db.query(Incident.priority, func.count(Incident.id)).group_by(Incident.priority):
         priority_distribution[row[0]] = row[1]
 
+    pd_rows = (
+        db.query(PagerDutyNotification)
+        .order_by(PagerDutyNotification.notified_at.desc())
+        .limit(12)
+        .all()
+    )
+    now = datetime.now(UTC).replace(tzinfo=None)
+    pending_acks = []
+    for row in pd_rows:
+        if row.acknowledged_at or row.escalation_status != "notified":
+            continue
+        wait = 1
+        if row.notified_at:
+            wait = max(1, int((now - row.notified_at).total_seconds() / 60))
+        pending_acks.append(
+            {
+                "team": row.team_name,
+                "incident_id": row.occ_incident_id,
+                "wait_minutes": wait,
+                "status": row.escalation_status,
+                "pd_incident_id": row.pd_incident_id,
+                "mock": row.is_mock,
+            }
+        )
+    # Seed mock pending acks only when no real PD notifications exist yet
+    if not pending_acks and not pd_rows:
+        pending_acks = MOCK_PENDING_ACKS
+
     label = "MOCK DATA" if settings.mock_mode else "LIVE DATA"
     return DashboardBundle(
         summary=summary,
@@ -172,7 +207,10 @@ def dashboard_bundle(db: Session = Depends(get_db)) -> DashboardBundle:
         priority_distribution=priority_distribution,
         recent_activities=MOCK_ACTIVITIES,
         active_bridges=MOCK_BRIDGES,
-        pending_acknowledgements=MOCK_PENDING_ACKS,
+        pending_acknowledgements=pending_acks,
+        pagerduty_notifications=[
+            PagerDutyNotificationRead.model_validate(r) for r in pd_rows
+        ],
         mock_mode=settings.mock_mode,
         data_label=label,
     )

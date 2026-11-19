@@ -36,6 +36,8 @@ class ApprovalAction(str, PyEnum):
     REJECT = "reject"
     SERVICENOW_CREATE = "servicenow_create"
     SERVICENOW_SKIP_DUPLICATE = "servicenow_skip_duplicate"
+    PAGERDUTY_NOTIFY = "pagerduty_notify"
+    PAGERDUTY_ACK = "pagerduty_ack"
 
 
 class IncidentPriority(str, PyEnum):
@@ -119,6 +121,9 @@ class Incident(Base):
     approval_events: Mapped[list["ApprovalAuditEvent"]] = relationship(
         back_populates="incident", cascade="all, delete-orphan"
     )
+    pagerduty_notifications: Mapped[list["PagerDutyNotification"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
 
 
 class IncidentAnalysis(Base):
@@ -165,3 +170,33 @@ class ApprovalAuditEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     incident: Mapped["Incident"] = relationship(back_populates="approval_events")
+
+
+class PagerDutyNotification(Base):
+    """Per-team PagerDuty page created only after OCC approval."""
+
+    __tablename__ = "pagerduty_notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+    servicenow_number: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    team_slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    team_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    pagerduty_service_id: Mapped[str] = mapped_column(String(128), default="")
+    pagerduty_escalation_policy_id: Mapped[str] = mapped_column(String(128), default="")
+
+    pd_incident_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    pd_incident_url: Mapped[str] = mapped_column(String(512), default="")
+    escalation_status: Mapped[str] = mapped_column(
+        String(64), default="notified"
+    )  # notified | acknowledged | escalated | failed
+
+    notified_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="pagerduty_notifications")

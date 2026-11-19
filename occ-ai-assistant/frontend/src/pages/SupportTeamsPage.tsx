@@ -112,20 +112,20 @@ export function SupportTeamsPage() {
 
             <div className="grid gap-3 md:grid-cols-2">
               <Field
-                label="PagerDuty service ID (placeholder)"
+                label="PagerDuty service ID"
                 value={selected.pagerduty_service_id}
                 mono
               />
               <Field
-                label="PagerDuty escalation policy ID (placeholder)"
+                label="PagerDuty escalation policy ID"
                 value={selected.pagerduty_escalation_policy_id}
                 mono
               />
             </div>
 
             <p className="text-xs text-[var(--color-muted)]">
-              Live PagerDuty paging is Phase 4. These IDs are shown so OCC can preview engagement
-              targets during analysis and (later) approval.
+              Used when OCC approves an incident — ServiceNow create then PagerDuty page (MOCK by
+              default). Teams bridges are Phase 5.
             </p>
           </section>
         )}

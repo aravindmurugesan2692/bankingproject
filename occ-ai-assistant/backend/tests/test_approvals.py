@@ -68,7 +68,7 @@ def test_approve_creates_mock_servicenow(client):
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["incident"]["status"] == "Approved"
+    assert body["incident"]["status"] == "Active"
     assert body["servicenow_number"]
     assert body["servicenow_sys_id"]
     assert body["servicenow_is_mock"] is True

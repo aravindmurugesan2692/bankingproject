@@ -139,6 +139,26 @@ class DashboardSummary(BaseModel):
     data_label: str
 
 
+class PagerDutyNotificationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    occ_incident_id: str
+    servicenow_number: str | None
+    team_slug: str
+    team_name: str
+    pagerduty_service_id: str
+    pagerduty_escalation_policy_id: str
+    pd_incident_id: str
+    pd_incident_url: str
+    escalation_status: str
+    notified_at: datetime
+    acknowledged_at: datetime | None
+    is_mock: bool
+    created_at: datetime
+
+
 class DashboardBundle(BaseModel):
     summary: DashboardSummary
     active_incidents: list[IncidentRead]
@@ -147,6 +167,7 @@ class DashboardBundle(BaseModel):
     recent_activities: list[dict]
     active_bridges: list[dict]
     pending_acknowledgements: list[dict]
+    pagerduty_notifications: list[PagerDutyNotificationRead] = []
     mock_mode: bool
     data_label: str
 
@@ -157,6 +178,7 @@ class HealthResponse(BaseModel):
     mock_mode: bool
     llm_configured: bool = False
     servicenow_configured: bool = False
+    pagerduty_configured: bool = False
 
 
 class RecommendedTeam(BaseModel):
@@ -255,4 +277,5 @@ class ApprovalDecisionResponse(BaseModel):
     servicenow_sys_id: str | None = None
     servicenow_is_mock: bool = True
     servicenow_duplicate: bool = False
+    pagerduty_notifications: list[PagerDutyNotificationRead] = []
     audit_trail: list[ApprovalAuditRead]

@@ -30,6 +30,8 @@ from app.schemas import (
     PagerDutyPlaceholder,
     SupportTeamRead,
 )
+from app.schemas import PagerDutyNotificationRead
+from app.services import pagerduty as pd
 from app.services import servicenow as sn
 
 router = APIRouter(prefix="/approvals", tags=["approvals"])
@@ -305,6 +307,27 @@ async def approve_incident(
     db.commit()
     db.refresh(incident)
 
+    # Phase 4 — page approved teams only after explicit OCC approval + SN create
+    pd_rows = await pd.notify_approved_teams(
+        db, incident, teams, severity=severity
+    )
+    for row in pd_rows:
+        _add_audit(
+            db,
+            incident,
+            action=ApprovalAction.PAGERDUTY_NOTIFY.value,
+            actor=payload.actor,
+            detail=(
+                f"{'MOCK ' if row.is_mock else ''}PagerDuty {row.pd_incident_id} "
+                f"→ {row.team_name} ({row.escalation_status})"
+            ),
+            teams=[row.team_name],
+            severity=severity,
+        )
+    incident.status = IncidentStatus.ACTIVE.value
+    db.commit()
+    db.refresh(incident)
+
     audit = (
         db.query(ApprovalAuditEvent)
         .filter(ApprovalAuditEvent.incident_id == incident.id)
@@ -317,6 +340,9 @@ async def approve_incident(
         servicenow_sys_id=sn_result.sys_id,
         servicenow_is_mock=sn_result.is_mock,
         servicenow_duplicate=sn_result.duplicate,
+        pagerduty_notifications=[
+            PagerDutyNotificationRead.model_validate(r) for r in pd_rows
+        ],
         audit_trail=[_serialize_audit(e) for e in audit],
     )
 
