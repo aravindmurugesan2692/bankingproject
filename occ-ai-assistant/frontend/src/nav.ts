@@ -1,0 +1,39 @@
+import type { LucideIcon } from 'lucide-react'
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  ClipboardCheck,
+  FileText,
+  Headset,
+  LayoutDashboard,
+  ListChecks,
+  Network,
+  PlusCircle,
+  Settings,
+  ShieldAlert,
+  Users,
+} from 'lucide-react'
+
+export type NavItem = {
+  label: string
+  path: string
+  icon: LucideIcon
+  phaseReady: boolean
+}
+
+export const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard', path: '/', icon: LayoutDashboard, phaseReady: true },
+  { label: 'Initiate Incident', path: '/initiate', icon: PlusCircle, phaseReady: true },
+  { label: 'Incident Analysis', path: '/analysis', icon: BarChart3, phaseReady: false },
+  { label: 'Incident Approvals', path: '/approvals', icon: ClipboardCheck, phaseReady: false },
+  { label: 'Incident Management', path: '/management', icon: ListChecks, phaseReady: false },
+  { label: 'PagerDuty', path: '/pagerduty', icon: Bell, phaseReady: false },
+  { label: 'ServiceNow', path: '/servicenow', icon: ShieldAlert, phaseReady: false },
+  { label: 'Teams Bridge Management', path: '/bridges', icon: Headset, phaseReady: false },
+  { label: 'Team Participation', path: '/participation', icon: Users, phaseReady: false },
+  { label: 'Incident Timeline', path: '/timeline', icon: Activity, phaseReady: false },
+  { label: 'AI Incident Reports', path: '/reports', icon: FileText, phaseReady: false },
+  { label: 'Support Team Configuration', path: '/teams-config', icon: Network, phaseReady: false },
+  { label: 'Settings', path: '/settings', icon: Settings, phaseReady: false },
+]

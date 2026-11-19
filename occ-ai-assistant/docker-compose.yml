@@ -1,0 +1,28 @@
+# Phase 1 stub — full Docker polish is Phase 9.
+# Local Phase 1 development prefers the README run commands (uvicorn + vite).
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      MOCK_MODE: "true"
+      DATABASE_URL: sqlite:////data/occ_ai_assistant.db
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000
+    volumes:
+      - occ-data:/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  occ-data:
