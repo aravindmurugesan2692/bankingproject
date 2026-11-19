@@ -117,7 +117,15 @@ export function AnalysisPage() {
 
       {!analyses.length ? (
         <div className="rounded-xl border border-[var(--color-slate-line)] bg-white/95 p-8 text-sm text-[var(--color-muted)] shadow-sm">
-          No analyses yet. Initiate an incident to auto-run AI analysis.
+          <p className="font-medium text-[var(--color-ink)]">No analyses yet</p>
+          <p className="mt-2">
+            Start with{' '}
+            <Link className="font-medium text-teal-800 underline" to="/initiate">
+              Initiate Incident
+            </Link>{' '}
+            — analysis runs automatically and opens here. Seeded demo incidents also receive MOCK
+            analyses on first backend start.
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">

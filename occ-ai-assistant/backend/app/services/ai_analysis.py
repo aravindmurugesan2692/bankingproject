@@ -318,6 +318,7 @@ def persist_analysis(
     provider: str,
     model: str,
     is_mock: bool,
+    update_incident_status: bool = True,
 ) -> IncidentAnalysis:
     analysis = IncidentAnalysis(
         incident_id=incident.id,
@@ -339,14 +340,30 @@ def persist_analysis(
         raw_json=json.dumps(payload),
     )
     db.add(analysis)
-    incident.status = IncidentStatus.ANALYZED.value
-    incident.priority = PRIORITY_FROM_P_CODE.get(
-        payload["suggested_priority"], incident.priority
-    )
+    if update_incident_status:
+        incident.status = IncidentStatus.ANALYZED.value
+        incident.priority = PRIORITY_FROM_P_CODE.get(
+            payload["suggested_priority"], incident.priority
+        )
     db.commit()
     db.refresh(analysis)
     db.refresh(incident)
     return analysis
+
+
+def seed_heuristic_analysis(db: Session, incident: Incident) -> IncidentAnalysis:
+    """Seed MOCK analysis for demo incidents without forcing status to Analyzed."""
+    teams = db.query(SupportTeam).filter(SupportTeam.active.is_(True)).all()
+    payload = heuristic_analysis(incident, teams)
+    return persist_analysis(
+        db,
+        incident,
+        payload,
+        provider="heuristic",
+        model="mock-heuristic-v1",
+        is_mock=True,
+        update_incident_status=False,
+    )
 
 
 async def analyze_incident(db: Session, incident: Incident) -> IncidentAnalysis:

@@ -92,6 +92,21 @@ export function DashboardPage() {
           <p className="mt-1 text-sm text-[var(--color-muted)]">
             Enterprise OCC overview. Seeded sample rows are labeled as mock data.
           </p>
+          <p className="mt-2 text-xs text-[var(--color-muted)]">
+            Workflow:{' '}
+            <Link className="font-medium text-teal-800 underline" to="/initiate">
+              Initiate
+            </Link>{' '}
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/analysis">
+              AI Analysis
+            </Link>{' '}
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/teams-config">
+              Support teams
+            </Link>{' '}
+            · Approvals / ServiceNow land in Phase 3
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <MockBadge label={data.data_label} />
@@ -147,12 +162,24 @@ export function DashboardPage() {
                 {data.active_incidents.map((incident) => (
                   <tr key={incident.id} className="border-t border-[var(--color-slate-line)]">
                     <td className="px-4 py-2.5 font-mono text-xs">
-                      {incident.occ_incident_id}
+                      <Link
+                        className="text-teal-800 underline-offset-2 hover:underline"
+                        to={`/analysis?incident=${incident.id}`}
+                      >
+                        {incident.occ_incident_id}
+                      </Link>
                       {incident.is_mock && (
                         <span className="ml-1 text-[10px] text-amber-700">MOCK</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 max-w-xs truncate">{incident.title}</td>
+                    <td className="px-4 py-2.5 max-w-xs truncate">
+                      <Link
+                        className="hover:text-teal-800"
+                        to={`/analysis?incident=${incident.id}`}
+                      >
+                        {incident.title}
+                      </Link>
+                    </td>
                     <td className="px-4 py-2.5">
                       <PriorityBadge priority={incident.priority} />
                     </td>

@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.models import Incident, IncidentPriority, IncidentStatus, SupportTeam
+from app.models import Incident, IncidentAnalysis, IncidentPriority, IncidentStatus, SupportTeam
 
 
 def _occ_id(n: int) -> str:
@@ -303,6 +303,25 @@ def seed_support_teams(db: Session) -> int:
     return inserted
 
 
+def seed_analyses_for_incidents_missing(db: Session) -> int:
+    """Ensure every incident has at least one MOCK analysis for a full demo."""
+    from app.services.ai_analysis import seed_heuristic_analysis
+
+    inserted = 0
+    incidents = db.query(Incident).order_by(Incident.id.asc()).all()
+    for incident in incidents:
+        has = (
+            db.query(IncidentAnalysis)
+            .filter(IncidentAnalysis.incident_id == incident.id)
+            .count()
+        )
+        if has:
+            continue
+        seed_heuristic_analysis(db, incident)
+        inserted += 1
+    return inserted
+
+
 def seed_if_empty(db: Session) -> int:
     """Insert MOCK sample incidents when the table is empty. Returns count inserted."""
     teams_inserted = seed_support_teams(db)
@@ -311,6 +330,9 @@ def seed_if_empty(db: Session) -> int:
 
     existing = db.query(Incident).count()
     if existing > 0:
+        analyses = seed_analyses_for_incidents_missing(db)
+        if analyses:
+            print(f"Seeded {analyses} MOCK analyses for existing incidents")
         return 0
 
     now = datetime.now(UTC).replace(tzinfo=None)
@@ -341,4 +363,7 @@ def seed_if_empty(db: Session) -> int:
         db.add(incident)
 
     db.commit()
+    analyses = seed_analyses_for_incidents_missing(db)
+    if analyses:
+        print(f"Seeded {analyses} MOCK analyses")
     return len(SAMPLE_INCIDENTS)

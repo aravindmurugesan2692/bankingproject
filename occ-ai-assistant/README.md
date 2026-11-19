@@ -1,8 +1,18 @@
-# OCC AI Assistant — Phase 2
+# OCC AI Assistant — Phase 2 (full product slice)
 
-Enterprise Operations Control Center platform. **Phases 1–2 complete**: dashboard, incident initiation, configurable LLM / heuristic analysis, and support-team recommendations.
+Complete, runnable OCC workflow for **incident initiation → AI analysis → support-team recommendations**.
 
-Banking Java app and `occ-bridge/` are left untouched — only `occ-ai-assistant/` is extended.
+Banking Java app and `occ-bridge/` are untouched — only `occ-ai-assistant/` is extended.
+
+## What you can run today
+
+1. **Dashboard** — live summary cards + tables (MOCK-labeled seed data)
+2. **Initiate Incident** — validated form → `POST /api/incidents` → SQLite persist
+3. **Auto AI analysis** — structured JSON hypotheses (LLM or heuristic MOCK fallback)
+4. **Incident Analysis** — full review UI (priority, causes, teams, missing info, disclaimer)
+5. **Support Team Configuration** — 10-team catalog with ownership + PagerDuty placeholders
+
+Approvals / ServiceNow are **Phase 3** (not in this slice).
 
 ## Stack
 
@@ -28,7 +38,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 - API docs: http://127.0.0.1:8000/docs  
 - Health: http://127.0.0.1:8000/api/health  
-- First start seeds **8 MOCK incidents** + **10 support teams**.
+- First start seeds **8 MOCK incidents**, **MOCK analyses**, and **10 support teams**.
 
 ### 2. Frontend
 
@@ -55,25 +65,20 @@ cd occ-ai-assistant
 docker compose up --build
 ```
 
-Full Docker polish is Phase 9.
+## End-to-end demo path
 
-## Phase 2 behaviour
+1. Open Dashboard — confirm MOCK cards and seeded incidents  
+2. Click an incident ID → Incident Analysis (seeded MOCK analysis)  
+3. Or **Initiate Incident** → fill mandatory fields → Create  
+4. App navigates to Analysis with P1–P4, recommended teams, troubleshooting, disclaimer  
+5. Open **Support Team Configuration** to inspect ownership / PD placeholders  
 
-1. OCC submits **Initiate Incident**.
-2. Backend persists the incident and **auto-runs analysis**.
-3. UI navigates to **Incident Analysis** with structured JSON fields:
-   summary, category, suggested P1–P4, business impact, potential causes,
-   affected app, recommended teams + reasons, troubleshooting steps,
-   missing information, next actions.
-4. Analysis is labeled **hypothesis / not confirmed root cause**.
-5. If information is thin, `needs_more_info` is set and missing fields are listed.
-
-### LLM mode
+## LLM mode
 
 | Condition | Behaviour |
 |-----------|-----------|
 | `MOCK_MODE=true` (default) or empty `OPENAI_API_KEY` | Heuristic MOCK analysis |
-| `MOCK_MODE=false` + `OPENAI_API_KEY` set | Live OpenAI-compatible chat completions (`LLM_BASE_URL` / `LLM_MODEL`) |
+| `MOCK_MODE=false` + `OPENAI_API_KEY` set | Live OpenAI-compatible chat completions |
 | Live call fails | Automatic heuristic fallback |
 
 ## APIs
@@ -92,14 +97,15 @@ Full Docker polish is Phase 9.
 
 ## Support teams (seeded)
 
-Application Support, Linux Administration, Windows Administration, Infrastructure, Network, Database, Kubernetes / Container Platform, Storage, Security, Cloud Operations — each with description, ownership, responsibilities, PagerDuty service/escalation placeholders, active flag. **No employee names.**
+Application Support, Linux Administration, Windows Administration, Infrastructure, Network, Database, Kubernetes / Container Platform, Storage, Security, Cloud Operations.
+
+**No employee names.** PagerDuty IDs are placeholders until Phase 4.
 
 ## Credentials
 
-- **Phase 1–2 demo:** none required (`MOCK_MODE=true`).
-- **Optional live LLM:** `OPENAI_API_KEY` (+ optional `LLM_MODEL`, `LLM_BASE_URL`).
-- ServiceNow / PagerDuty / Microsoft Graph still unused until later phases.
+- **Demo:** none (`MOCK_MODE=true`)
+- **Optional live LLM:** `OPENAI_API_KEY` (+ `MOCK_MODE=false`, `LLM_MODEL`, `LLM_BASE_URL`)
 
 ## Waiting for approval
 
-Do **not** start Phase 3 (OCC approval + ServiceNow) until the user approves Phase 2.
+Phase 3 (OCC approval + ServiceNow) follows separately after this Phase 2 PR.
