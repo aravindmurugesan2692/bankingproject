@@ -340,8 +340,18 @@ def persist_analysis(
         raw_json=json.dumps(payload),
     )
     db.add(analysis)
+    # Always seed approval working copy when empty (demo + live create path)
+    if not incident.working_severity:
+        incident.working_severity = payload["suggested_priority"]
+    if not incident.working_description:
+        incident.working_description = incident.description
+    if not incident.selected_team_slugs:
+        incident.selected_team_slugs = json.dumps(
+            [t["slug"] for t in payload["recommended_teams"]]
+        )
     if update_incident_status:
-        incident.status = IncidentStatus.ANALYZED.value
+        # Phase 3: after analysis, incident enters OCC approval queue
+        incident.status = IncidentStatus.PENDING_APPROVAL.value
         incident.priority = PRIORITY_FROM_P_CODE.get(
             payload["suggested_priority"], incident.priority
         )

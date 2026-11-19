@@ -99,7 +99,13 @@ export function AnalysisPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <MockBadge label="PHASE 2" />
+          <MockBadge label="PHASE 2–3" />
+          <Link
+            to="/approvals"
+            className="rounded-md border border-[var(--color-slate-line)] bg-white px-3.5 py-2 text-sm font-semibold hover:bg-slate-50"
+          >
+            Go to Approvals
+          </Link>
           <Link
             to="/initiate"
             className="rounded-md bg-[var(--color-accent)] px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-800"

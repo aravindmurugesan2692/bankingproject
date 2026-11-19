@@ -1,4 +1,8 @@
 import type {
+  ApprovalDecidePayload,
+  ApprovalDecisionResponse,
+  ApprovalDraftPayload,
+  ApprovalPacket,
   DashboardBundle,
   Incident,
   IncidentAnalysis,
@@ -72,4 +76,42 @@ export function rerunAnalysis(incidentId: number): Promise<IncidentAnalysis> {
 
 export function listTeams(): Promise<SupportTeam[]> {
   return request<SupportTeam[]>('/teams')
+}
+
+export function listApprovals(): Promise<ApprovalPacket[]> {
+  return request<ApprovalPacket[]>('/approvals')
+}
+
+export function getApproval(incidentId: number): Promise<ApprovalPacket> {
+  return request<ApprovalPacket>(`/approvals/${incidentId}`)
+}
+
+export function updateApprovalDraft(
+  incidentId: number,
+  payload: ApprovalDraftPayload,
+): Promise<ApprovalPacket> {
+  return request<ApprovalPacket>(`/approvals/${incidentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function approveIncident(
+  incidentId: number,
+  payload: ApprovalDecidePayload,
+): Promise<ApprovalDecisionResponse> {
+  return request<ApprovalDecisionResponse>(`/approvals/${incidentId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function rejectIncident(
+  incidentId: number,
+  payload: ApprovalDecidePayload,
+): Promise<ApprovalDecisionResponse> {
+  return request<ApprovalDecisionResponse>(`/approvals/${incidentId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }

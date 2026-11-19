@@ -1,5 +1,7 @@
 export type Environment = 'Production' | 'QA' | 'Development'
 
+export type SeverityCode = 'P1' | 'P2' | 'P3' | 'P4'
+
 export interface Incident {
   id: number
   occ_incident_id: string
@@ -16,6 +18,15 @@ export interface Incident {
   status: string
   priority: string
   is_mock: boolean
+  working_severity?: string | null
+  working_description?: string | null
+  selected_team_slugs?: string[]
+  approved_by?: string | null
+  approved_at?: string | null
+  rejection_reason?: string | null
+  servicenow_number?: string | null
+  servicenow_sys_id?: string | null
+  servicenow_is_mock?: boolean
   ack_minutes: number | null
   resolution_minutes: number | null
   bridge_active: boolean
@@ -82,6 +93,57 @@ export interface SupportTeam {
   pagerduty_service_id: string
   pagerduty_escalation_policy_id: string
   active: boolean
+}
+
+export interface ApprovalAuditEvent {
+  id: number
+  incident_id: number
+  action: string
+  actor: string
+  detail: string
+  approved_teams: string[]
+  severity: string | null
+  created_at: string
+}
+
+export interface PagerDutyPlaceholder {
+  team: string
+  slug: string
+  service_id: string
+  escalation_policy_id: string
+}
+
+export interface ApprovalPacket {
+  incident: Incident
+  analysis: IncidentAnalysis | null
+  selected_teams: SupportTeam[]
+  pagerduty_placeholders: PagerDutyPlaceholder[]
+  servicenow_preview: Record<string, unknown>
+  audit_trail: ApprovalAuditEvent[]
+}
+
+export interface ApprovalDecisionResponse {
+  incident: Incident
+  servicenow_number: string | null
+  servicenow_sys_id: string | null
+  servicenow_is_mock: boolean
+  servicenow_duplicate: boolean
+  audit_trail: ApprovalAuditEvent[]
+}
+
+export interface ApprovalDraftPayload {
+  working_severity?: SeverityCode
+  working_description?: string
+  selected_team_slugs?: string[]
+  actor?: string
+}
+
+export interface ApprovalDecidePayload {
+  actor?: string
+  rejection_reason?: string
+  working_severity?: SeverityCode
+  working_description?: string
+  selected_team_slugs?: string[]
 }
 
 export interface DashboardSummary {

@@ -14,8 +14,9 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 ACTIVE_STATUSES = {
     IncidentStatus.NEW.value,
     IncidentStatus.ANALYZED.value,
-    IncidentStatus.ACTIVE.value,
     IncidentStatus.PENDING_APPROVAL.value,
+    IncidentStatus.APPROVED.value,
+    IncidentStatus.ACTIVE.value,
 }
 RESOLVED_STATUSES = {IncidentStatus.RESOLVED.value, IncidentStatus.CLOSED.value}
 

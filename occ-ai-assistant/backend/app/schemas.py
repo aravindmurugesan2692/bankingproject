@@ -1,11 +1,15 @@
 """Pydantic request/response schemas."""
 
-from datetime import datetime
-from typing import Literal
+from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+import json
+from datetime import datetime
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 EnvironmentLiteral = Literal["Production", "QA", "Development"]
+SeverityLiteral = Literal["P1", "P2", "P3", "P4"]
 
 
 class IncidentCreate(BaseModel):
@@ -48,12 +52,78 @@ class IncidentRead(BaseModel):
     status: str
     priority: str
     is_mock: bool
+    working_severity: str | None = None
+    working_description: str | None = None
+    selected_team_slugs: list[str] = []
+    approved_by: str | None = None
+    approved_at: datetime | None = None
+    rejection_reason: str | None = None
+    servicenow_number: str | None = None
+    servicenow_sys_id: str | None = None
+    servicenow_is_mock: bool = True
     ack_minutes: int | None
     resolution_minutes: int | None
     bridge_active: bool
     created_at: datetime
     updated_at: datetime
     created_by: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_team_slugs(cls, data: Any) -> Any:
+        if hasattr(data, "selected_team_slugs"):
+            raw = getattr(data, "selected_team_slugs")
+            slugs = _parse_slug_list(raw)
+            # Build dict from ORM object
+            return {
+                "id": data.id,
+                "occ_incident_id": data.occ_incident_id,
+                "title": data.title,
+                "description": data.description,
+                "application_service": data.application_service,
+                "environment": data.environment,
+                "business_impact": data.business_impact,
+                "users_affected": data.users_affected,
+                "issue_start_time": data.issue_start_time,
+                "error_messages": data.error_messages,
+                "affected_infrastructure": data.affected_infrastructure,
+                "additional_observations": data.additional_observations,
+                "status": data.status,
+                "priority": data.priority,
+                "is_mock": data.is_mock,
+                "working_severity": getattr(data, "working_severity", None),
+                "working_description": getattr(data, "working_description", None),
+                "selected_team_slugs": slugs,
+                "approved_by": getattr(data, "approved_by", None),
+                "approved_at": getattr(data, "approved_at", None),
+                "rejection_reason": getattr(data, "rejection_reason", None),
+                "servicenow_number": getattr(data, "servicenow_number", None),
+                "servicenow_sys_id": getattr(data, "servicenow_sys_id", None),
+                "servicenow_is_mock": getattr(data, "servicenow_is_mock", True),
+                "ack_minutes": data.ack_minutes,
+                "resolution_minutes": data.resolution_minutes,
+                "bridge_active": data.bridge_active,
+                "created_at": data.created_at,
+                "updated_at": data.updated_at,
+                "created_by": data.created_by,
+            }
+        if isinstance(data, dict) and "selected_team_slugs" in data:
+            data = {**data, "selected_team_slugs": _parse_slug_list(data.get("selected_team_slugs"))}
+        return data
+
+
+def _parse_slug_list(raw: Any) -> list[str]:
+    if raw is None or raw == "":
+        return []
+    if isinstance(raw, list):
+        return [str(x) for x in raw]
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            return [str(x) for x in parsed]
+    except (TypeError, json.JSONDecodeError):
+        pass
+    return []
 
 
 class DashboardSummary(BaseModel):
@@ -86,6 +156,7 @@ class HealthResponse(BaseModel):
     app: str
     mock_mode: bool
     llm_configured: bool = False
+    servicenow_configured: bool = False
 
 
 class RecommendedTeam(BaseModel):
@@ -134,3 +205,54 @@ class IncidentAnalysisRead(BaseModel):
 class IncidentCreateResponse(BaseModel):
     incident: IncidentRead
     analysis: IncidentAnalysisRead | None = None
+
+
+class ApprovalAuditRead(BaseModel):
+    id: int
+    incident_id: int
+    action: str
+    actor: str
+    detail: str
+    approved_teams: list[str] = []
+    severity: str | None = None
+    created_at: datetime
+
+
+class PagerDutyPlaceholder(BaseModel):
+    team: str
+    slug: str
+    service_id: str
+    escalation_policy_id: str
+
+
+class ApprovalPacket(BaseModel):
+    incident: IncidentRead
+    analysis: IncidentAnalysisRead | None
+    selected_teams: list[SupportTeamRead]
+    pagerduty_placeholders: list[PagerDutyPlaceholder]
+    servicenow_preview: dict
+    audit_trail: list[ApprovalAuditRead]
+
+
+class ApprovalDraftUpdate(BaseModel):
+    working_severity: SeverityLiteral | None = None
+    working_description: str | None = Field(default=None, min_length=10, max_length=10000)
+    selected_team_slugs: list[str] | None = None
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class ApprovalDecide(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    rejection_reason: str | None = Field(default=None, max_length=5000)
+    working_severity: SeverityLiteral | None = None
+    working_description: str | None = None
+    selected_team_slugs: list[str] | None = None
+
+
+class ApprovalDecisionResponse(BaseModel):
+    incident: IncidentRead
+    servicenow_number: str | None = None
+    servicenow_sys_id: str | None = None
+    servicenow_is_mock: bool = True
+    servicenow_duplicate: bool = False
+    audit_trail: list[ApprovalAuditRead]

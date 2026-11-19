@@ -22,10 +22,20 @@ class Environment(str, PyEnum):
 class IncidentStatus(str, PyEnum):
     NEW = "New"
     ANALYZED = "Analyzed"
-    ACTIVE = "Active"
     PENDING_APPROVAL = "Pending Approval"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+    ACTIVE = "Active"
     RESOLVED = "Resolved"
     CLOSED = "Closed"
+
+
+class ApprovalAction(str, PyEnum):
+    DRAFT_UPDATE = "draft_update"
+    APPROVE = "approve"
+    REJECT = "reject"
+    SERVICENOW_CREATE = "servicenow_create"
+    SERVICENOW_SKIP_DUPLICATE = "servicenow_skip_duplicate"
 
 
 class IncidentPriority(str, PyEnum):
@@ -80,6 +90,19 @@ class Incident(Base):
     priority: Mapped[str] = mapped_column(String(32), default=IncidentPriority.MEDIUM.value)
     is_mock: Mapped[bool] = mapped_column(default=False)
 
+    # Phase 3 — OCC approval working copy (editable before approve)
+    working_severity: Mapped[str | None] = mapped_column(String(8), nullable=True)  # P1–P4
+    working_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    selected_team_slugs: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
+    approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # ServiceNow linkage (set only after explicit approval)
+    servicenow_number: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    servicenow_sys_id: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    servicenow_is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+
     ack_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     resolution_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     bridge_active: Mapped[bool] = mapped_column(default=False)
@@ -91,6 +114,9 @@ class Incident(Base):
     created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
 
     analyses: Mapped[list["IncidentAnalysis"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
+    approval_events: Mapped[list["ApprovalAuditEvent"]] = relationship(
         back_populates="incident", cascade="all, delete-orphan"
     )
 
@@ -124,3 +150,18 @@ class IncidentAnalysis(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     incident: Mapped["Incident"] = relationship(back_populates="analyses")
+
+
+class ApprovalAuditEvent(Base):
+    __tablename__ = "approval_audit_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    detail: Mapped[str] = mapped_column(Text, default="")
+    approved_teams: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
+    severity: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="approval_events")
