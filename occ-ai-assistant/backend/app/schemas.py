@@ -85,3 +85,52 @@ class HealthResponse(BaseModel):
     status: str
     app: str
     mock_mode: bool
+    llm_configured: bool = False
+
+
+class RecommendedTeam(BaseModel):
+    team: str
+    slug: str
+    reason: str
+
+
+class SupportTeamRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+    description: str
+    ownership: str
+    responsibilities: str
+    pagerduty_service_id: str
+    pagerduty_escalation_policy_id: str
+    active: bool
+
+
+class IncidentAnalysisRead(BaseModel):
+    id: int
+    incident_id: int
+    occ_incident_id: str | None = None
+    incident_title: str | None = None
+    summary: str
+    category: str
+    suggested_priority: str
+    business_impact: str
+    potential_causes: list[str]
+    affected_application: str
+    recommended_teams: list[RecommendedTeam]
+    troubleshooting_steps: list[str]
+    missing_information: list[str]
+    next_actions: list[str]
+    needs_more_info: bool
+    disclaimer: str
+    provider: str
+    model: str
+    is_mock: bool
+    created_at: datetime
+
+
+class IncidentCreateResponse(BaseModel):
+    incident: IncidentRead
+    analysis: IncidentAnalysisRead | None = None

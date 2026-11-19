@@ -1,4 +1,4 @@
-"""Incident CRUD — Phase 1 focuses on create + list."""
+"""Incident CRUD — Phase 2 auto-runs AI analysis after create."""
 
 from datetime import UTC, datetime
 
@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Incident, IncidentPriority, IncidentStatus
-from app.schemas import IncidentCreate, IncidentRead
+from app.routers.analysis import serialize_analysis
+from app.schemas import IncidentCreate, IncidentCreateResponse, IncidentRead
+from app.services.ai_analysis import analyze_incident
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -27,8 +29,10 @@ def _next_occ_id(db: Session) -> str:
     return f"OCC-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
 
-@router.post("", response_model=IncidentRead, status_code=status.HTTP_201_CREATED)
-def create_incident(payload: IncidentCreate, db: Session = Depends(get_db)) -> Incident:
+@router.post("", response_model=IncidentCreateResponse, status_code=status.HTTP_201_CREATED)
+async def create_incident(
+    payload: IncidentCreate, db: Session = Depends(get_db)
+) -> IncidentCreateResponse:
     incident = Incident(
         occ_incident_id=_next_occ_id(db),
         title=payload.title,
@@ -49,7 +53,12 @@ def create_incident(payload: IncidentCreate, db: Session = Depends(get_db)) -> I
     db.add(incident)
     db.commit()
     db.refresh(incident)
-    return incident
+
+    analysis = await analyze_incident(db, incident)
+    return IncidentCreateResponse(
+        incident=IncidentRead.model_validate(incident),
+        analysis=serialize_analysis(analysis, incident),
+    )
 
 
 @router.get("", response_model=list[IncidentRead])

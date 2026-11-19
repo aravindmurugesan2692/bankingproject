@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { ComingSoonPage } from './pages/ComingSoonPage'
+import { AnalysisPage } from './pages/AnalysisPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { InitiateIncidentPage } from './pages/InitiateIncidentPage'
 
@@ -11,7 +12,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="initiate" element={<InitiateIncidentPage />} />
-          <Route path="analysis" element={<ComingSoonPage />} />
+          <Route path="analysis" element={<AnalysisPage />} />
           <Route path="approvals" element={<ComingSoonPage />} />
           <Route path="management" element={<ComingSoonPage />} />
           <Route path="pagerduty" element={<ComingSoonPage />} />

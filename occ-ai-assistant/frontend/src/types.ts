@@ -38,6 +38,52 @@ export interface IncidentCreatePayload {
   created_by?: string
 }
 
+export interface RecommendedTeam {
+  team: string
+  slug: string
+  reason: string
+}
+
+export interface IncidentAnalysis {
+  id: number
+  incident_id: number
+  occ_incident_id: string | null
+  incident_title: string | null
+  summary: string
+  category: string
+  suggested_priority: string
+  business_impact: string
+  potential_causes: string[]
+  affected_application: string
+  recommended_teams: RecommendedTeam[]
+  troubleshooting_steps: string[]
+  missing_information: string[]
+  next_actions: string[]
+  needs_more_info: boolean
+  disclaimer: string
+  provider: string
+  model: string
+  is_mock: boolean
+  created_at: string
+}
+
+export interface IncidentCreateResponse {
+  incident: Incident
+  analysis: IncidentAnalysis | null
+}
+
+export interface SupportTeam {
+  id: number
+  name: string
+  slug: string
+  description: string
+  ownership: string
+  responsibilities: string
+  pagerduty_service_id: string
+  pagerduty_escalation_policy_id: string
+  active: boolean
+}
+
 export interface DashboardSummary {
   total_incidents: number
   active_incidents: number

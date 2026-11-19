@@ -1,8 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { CheckCircle2, Loader2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { createIncident } from '../api/client'
-import type { Environment, Incident } from '../types'
+import type { Environment, Incident, IncidentAnalysis } from '../types'
 import { MockBadge } from '../components/MockBadge'
 
 type FormState = {
@@ -32,11 +32,13 @@ const INITIAL: FormState = {
 }
 
 export function InitiateIncidentPage() {
+  const navigate = useNavigate()
   const [form, setForm] = useState<FormState>(INITIAL)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
   const [created, setCreated] = useState<Incident | null>(null)
+  const [analysis, setAnalysis] = useState<IncidentAnalysis | null>(null)
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -66,11 +68,12 @@ export function InitiateIncidentPage() {
     event.preventDefault()
     setApiError(null)
     setCreated(null)
+    setAnalysis(null)
     if (!validate()) return
 
     setSubmitting(true)
     try {
-      const incident = await createIncident({
+      const result = await createIncident({
         title: form.title.trim(),
         description: form.description.trim(),
         application_service: form.application_service.trim(),
@@ -83,9 +86,13 @@ export function InitiateIncidentPage() {
         additional_observations: form.additional_observations.trim() || null,
         created_by: 'OCC Engineer · Demo User',
       })
-      setCreated(incident)
+      setCreated(result.incident)
+      setAnalysis(result.analysis)
       setForm(INITIAL)
       setFieldErrors({})
+      if (result.incident?.id) {
+        navigate(`/analysis?incident=${result.incident.id}`)
+      }
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Failed to create incident')
     } finally {
@@ -104,7 +111,7 @@ export function InitiateIncidentPage() {
             Capture a user-reported issue. Mandatory fields are validated before POST to FastAPI.
           </p>
         </div>
-        <MockBadge label="PHASE 1 · NO AI YET" />
+        <MockBadge label="PHASE 2 · AUTO ANALYSIS" />
       </div>
 
       {created && (
@@ -112,16 +119,20 @@ export function InitiateIncidentPage() {
           <div className="flex items-start gap-2">
             <CheckCircle2 className="mt-0.5 h-5 w-5 text-teal-700" />
             <div>
-              <p className="font-semibold">Incident persisted in SQLite</p>
+              <p className="font-semibold">Incident persisted and AI analysis started</p>
               <p className="mt-1 font-mono text-xs">
                 {created.occ_incident_id} · internal id {created.id}
+                {analysis ? ` · ${analysis.suggested_priority}` : ''}
               </p>
               <p className="mt-2 text-[var(--color-muted)]">
-                AI analysis will run in Phase 2 after approval. View it on the{' '}
-                <Link className="font-medium text-teal-800 underline" to="/">
-                  Dashboard
+                Review structured recommendations on{' '}
+                <Link
+                  className="font-medium text-teal-800 underline"
+                  to={`/analysis?incident=${created.id}`}
+                >
+                  Incident Analysis
                 </Link>
-                .
+                . Approvals / ServiceNow are Phase 3.
               </p>
             </div>
           </div>

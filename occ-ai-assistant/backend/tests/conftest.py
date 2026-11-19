@@ -11,9 +11,11 @@ from sqlalchemy.pool import StaticPool
 # Ensure settings load before app import
 os.environ["MOCK_MODE"] = "true"
 os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["OPENAI_API_KEY"] = ""
 
 from app.database import Base, get_db  # noqa: E402
 from app.main import create_app  # noqa: E402
+from app.seed import seed_support_teams  # noqa: E402
 
 
 @pytest.fixture()
@@ -25,6 +27,13 @@ def client():
     )
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base.metadata.create_all(bind=engine)
+
+    # Seed teams into the isolated test DB (lifespan seeds a different engine)
+    seed_db = TestingSessionLocal()
+    try:
+        seed_support_teams(seed_db)
+    finally:
+        seed_db.close()
 
     def override_get_db():
         db = TestingSessionLocal()

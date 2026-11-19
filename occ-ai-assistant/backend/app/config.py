@@ -18,8 +18,14 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     api_prefix: str = "/api"
 
-    # Placeholders for later phases — never hardcode real secrets
+    # LLM (Phase 2) — used only when MOCK_MODE=false and a key is present
     openai_api_key: str = ""
+    llm_provider: str = "openai"  # openai | compatible
+    llm_model: str = "gpt-4o-mini"
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_timeout_seconds: float = 45.0
+
+    # Placeholders for later phases — never hardcode real secrets
     servicenow_instance_url: str = ""
     servicenow_username: str = ""
     servicenow_password: str = ""
@@ -31,6 +37,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def use_live_llm(self) -> bool:
+        return (not self.mock_mode) and bool(self.openai_api_key.strip())
 
 
 @lru_cache
