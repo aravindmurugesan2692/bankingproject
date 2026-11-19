@@ -24,18 +24,24 @@ def _valid_payload(**overrides):
 def test_create_incident_success(client):
     response = client.post("/api/incidents", json=_valid_payload())
     assert response.status_code == 201, response.text
-    data = response.json()
+    body = response.json()
+    data = body["incident"]
     assert data["title"] == "ATM network outage at Region West"
     assert data["environment"] == "Production"
     assert data["users_affected"] == 150
-    assert data["status"] == "New"
+    assert data["status"] == "Analyzed"
     assert data["occ_incident_id"].startswith("OCC-")
     assert data["is_mock"] is False
     assert data["id"] >= 1
+    analysis = body["analysis"]
+    assert analysis is not None
+    assert analysis["suggested_priority"] in {"P1", "P2", "P3", "P4"}
+    assert analysis["recommended_teams"]
+    assert "not confirmed root cause" in analysis["disclaimer"].lower()
 
 
 def test_create_incident_persists_and_listable(client):
-    created = client.post("/api/incidents", json=_valid_payload()).json()
+    created = client.post("/api/incidents", json=_valid_payload()).json()["incident"]
     listed = client.get("/api/incidents")
     assert listed.status_code == 200
     ids = [item["id"] for item in listed.json()]
@@ -70,7 +76,7 @@ def test_create_incident_allows_optional_fields_null(client):
     )
     response = client.post("/api/incidents", json=payload)
     assert response.status_code == 201
-    data = response.json()
+    data = response.json()["incident"]
     assert data["error_messages"] is None
     assert data["affected_infrastructure"] is None
 

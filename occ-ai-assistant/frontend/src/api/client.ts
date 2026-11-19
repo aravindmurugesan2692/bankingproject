@@ -1,4 +1,11 @@
-import type { DashboardBundle, Incident, IncidentCreatePayload } from '../types'
+import type {
+  DashboardBundle,
+  Incident,
+  IncidentAnalysis,
+  IncidentCreatePayload,
+  IncidentCreateResponse,
+  SupportTeam,
+} from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
@@ -38,8 +45,8 @@ export function fetchDashboard(): Promise<DashboardBundle> {
   return request<DashboardBundle>('/dashboard')
 }
 
-export function createIncident(payload: IncidentCreatePayload): Promise<Incident> {
-  return request<Incident>('/incidents', {
+export function createIncident(payload: IncidentCreatePayload): Promise<IncidentCreateResponse> {
+  return request<IncidentCreateResponse>('/incidents', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
@@ -47,4 +54,22 @@ export function createIncident(payload: IncidentCreatePayload): Promise<Incident
 
 export function listIncidents(): Promise<Incident[]> {
   return request<Incident[]>('/incidents')
+}
+
+export function listAnalyses(): Promise<IncidentAnalysis[]> {
+  return request<IncidentAnalysis[]>('/analyses')
+}
+
+export function getIncidentAnalysis(incidentId: number): Promise<IncidentAnalysis> {
+  return request<IncidentAnalysis>(`/incidents/${incidentId}/analysis`)
+}
+
+export function rerunAnalysis(incidentId: number): Promise<IncidentAnalysis> {
+  return request<IncidentAnalysis>(`/incidents/${incidentId}/analysis`, {
+    method: 'POST',
+  })
+}
+
+export function listTeams(): Promise<SupportTeam[]> {
+  return request<SupportTeam[]>('/teams')
 }

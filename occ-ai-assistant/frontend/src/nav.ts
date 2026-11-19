@@ -25,7 +25,7 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard, phaseReady: true },
   { label: 'Initiate Incident', path: '/initiate', icon: PlusCircle, phaseReady: true },
-  { label: 'Incident Analysis', path: '/analysis', icon: BarChart3, phaseReady: false },
+  { label: 'Incident Analysis', path: '/analysis', icon: BarChart3, phaseReady: true },
   { label: 'Incident Approvals', path: '/approvals', icon: ClipboardCheck, phaseReady: false },
   { label: 'Incident Management', path: '/management', icon: ListChecks, phaseReady: false },
   { label: 'PagerDuty', path: '/pagerduty', icon: Bell, phaseReady: false },
@@ -34,6 +34,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Team Participation', path: '/participation', icon: Users, phaseReady: false },
   { label: 'Incident Timeline', path: '/timeline', icon: Activity, phaseReady: false },
   { label: 'AI Incident Reports', path: '/reports', icon: FileText, phaseReady: false },
-  { label: 'Support Team Configuration', path: '/teams-config', icon: Network, phaseReady: false },
+  { label: 'Support Team Configuration', path: '/teams-config', icon: Network, phaseReady: true },
   { label: 'Settings', path: '/settings', icon: Settings, phaseReady: false },
 ]

@@ -1,10 +1,10 @@
-"""Seed realistic MOCK sample incidents for the dashboard."""
+"""Seed realistic MOCK sample incidents and support teams."""
 
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.models import Incident, IncidentPriority, IncidentStatus
+from app.models import Incident, IncidentAnalysis, IncidentPriority, IncidentStatus, SupportTeam
 
 
 def _occ_id(n: int) -> str:
@@ -173,10 +173,166 @@ SAMPLE_INCIDENTS: list[dict] = [
 ]
 
 
+SUPPORT_TEAMS: list[dict] = [
+    {
+        "name": "Application Support",
+        "slug": "application-support",
+        "description": "Owns business application runtime health and functional defects.",
+        "ownership": "Payment Gateway, Mobile Banking SSO, Branch Portal, Notification Service, Core Banking API",
+        "responsibilities": "App logs, releases, feature toggles, upstream/downstream API contracts",
+        "pagerduty_service_id": "PD_SVC_APP_SUPPORT_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_APP_SUPPORT_PLACEHOLDER",
+        "keywords": "application,api,gateway,payment,sso,portal,notification,timeout,500,504",
+    },
+    {
+        "name": "Linux Administration",
+        "slug": "linux-administration",
+        "description": "Linux OS and host-level operations.",
+        "ownership": "Linux VMs and bare-metal hosts supporting banking workloads",
+        "responsibilities": "Kernel, systemd, packages, host performance, OS patching",
+        "pagerduty_service_id": "PD_SVC_LINUX_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_LINUX_PLACEHOLDER",
+        "keywords": "linux,kernel,systemd,host,ssh,cpu,memory",
+    },
+    {
+        "name": "Windows Administration",
+        "slug": "windows-administration",
+        "description": "Windows Server and Active Directory platform support.",
+        "ownership": "Windows Server fleets, Active Directory, GPO",
+        "responsibilities": "Windows services, AD auth issues, patch windows",
+        "pagerduty_service_id": "PD_SVC_WINDOWS_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_WINDOWS_PLACEHOLDER",
+        "keywords": "windows,active directory,gpo,iis",
+    },
+    {
+        "name": "Infrastructure",
+        "slug": "infrastructure",
+        "description": "Compute, virtualization, and shared platform infrastructure.",
+        "ownership": "Hypervisors, shared compute pools, load balancers (infra layer)",
+        "responsibilities": "Capacity, host availability, infra change windows",
+        "pagerduty_service_id": "PD_SVC_INFRA_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_INFRA_PLACEHOLDER",
+        "keywords": "infrastructure,vm,hypervisor,load balancer,capacity",
+    },
+    {
+        "name": "Network",
+        "slug": "network",
+        "description": "Network connectivity, DNS, firewalls, and routing.",
+        "ownership": "DNS, firewalls, WAN/LAN paths, VIP routing",
+        "responsibilities": "Latency, packet loss, ACL changes, DNS failures",
+        "pagerduty_service_id": "PD_SVC_NETWORK_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_NETWORK_PLACEHOLDER",
+        "keywords": "network,dns,firewall,latency,packet,vip,tcp,connectivity",
+    },
+    {
+        "name": "Database",
+        "slug": "database",
+        "description": "Relational and operational data platforms.",
+        "ownership": "Oracle core DB, SQL Server branch DB, Postgres replicas",
+        "responsibilities": "Locks, replication lag, query performance, backups",
+        "pagerduty_service_id": "PD_SVC_DATABASE_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_DATABASE_PLACEHOLDER",
+        "keywords": "database,sql,oracle,postgres,replication,lock,ora-",
+    },
+    {
+        "name": "Kubernetes / Container Platform",
+        "slug": "k8s-containers",
+        "description": "Kubernetes clusters and container runtime platform.",
+        "ownership": "prod/qa k8s clusters, ingress, workloads",
+        "responsibilities": "Pods, deployments, HPA, cluster networking, helm releases",
+        "pagerduty_service_id": "PD_SVC_K8S_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_K8S_PLACEHOLDER",
+        "keywords": "kubernetes,k8s,container,pod,helm,ingress,docker",
+    },
+    {
+        "name": "Storage",
+        "slug": "storage",
+        "description": "Block/file/object storage platforms.",
+        "ownership": "SAN/NAS volumes, object buckets used by banking apps",
+        "responsibilities": "Disk pressure, volume mount failures, IOPS saturation",
+        "pagerduty_service_id": "PD_SVC_STORAGE_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_STORAGE_PLACEHOLDER",
+        "keywords": "storage,disk,nfs,volume,iops,san,nas",
+    },
+    {
+        "name": "Security",
+        "slug": "security",
+        "description": "Security operations and control validation.",
+        "ownership": "Fraud controls, cert stores, security tooling integrations",
+        "responsibilities": "Suspicious activity, cert trust, policy violations",
+        "pagerduty_service_id": "PD_SVC_SECURITY_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_SECURITY_PLACEHOLDER",
+        "keywords": "security,fraud,cert,certificate,tls,breach,mfa",
+    },
+    {
+        "name": "Cloud Operations",
+        "slug": "cloud-ops",
+        "description": "Public cloud account and platform operations.",
+        "ownership": "AWS/Azure landing zones used by OCC workloads",
+        "responsibilities": "Cloud quotas, IAM roles, regional service health",
+        "pagerduty_service_id": "PD_SVC_CLOUD_PLACEHOLDER",
+        "pagerduty_escalation_policy_id": "PD_ESC_CLOUD_PLACEHOLDER",
+        "keywords": "cloud,aws,azure,gcp,iam,region,quota",
+    },
+]
+
+
+def seed_support_teams(db: Session) -> int:
+    """Upsert support team catalog. Returns number of newly inserted rows."""
+    inserted = 0
+    for item in SUPPORT_TEAMS:
+        existing = db.query(SupportTeam).filter(SupportTeam.slug == item["slug"]).first()
+        if existing:
+            continue
+        db.add(
+            SupportTeam(
+                name=item["name"],
+                slug=item["slug"],
+                description=item["description"],
+                ownership=item["ownership"],
+                responsibilities=item["responsibilities"],
+                pagerduty_service_id=item["pagerduty_service_id"],
+                pagerduty_escalation_policy_id=item["pagerduty_escalation_policy_id"],
+                active=True,
+                keywords=item["keywords"],
+            )
+        )
+        inserted += 1
+    if inserted:
+        db.commit()
+    return inserted
+
+
+def seed_analyses_for_incidents_missing(db: Session) -> int:
+    """Ensure every incident has at least one MOCK analysis for a full demo."""
+    from app.services.ai_analysis import seed_heuristic_analysis
+
+    inserted = 0
+    incidents = db.query(Incident).order_by(Incident.id.asc()).all()
+    for incident in incidents:
+        has = (
+            db.query(IncidentAnalysis)
+            .filter(IncidentAnalysis.incident_id == incident.id)
+            .count()
+        )
+        if has:
+            continue
+        seed_heuristic_analysis(db, incident)
+        inserted += 1
+    return inserted
+
+
 def seed_if_empty(db: Session) -> int:
     """Insert MOCK sample incidents when the table is empty. Returns count inserted."""
+    teams_inserted = seed_support_teams(db)
+    if teams_inserted:
+        print(f"Seeded {teams_inserted} support teams")
+
     existing = db.query(Incident).count()
     if existing > 0:
+        analyses = seed_analyses_for_incidents_missing(db)
+        if analyses:
+            print(f"Seeded {analyses} MOCK analyses for existing incidents")
         return 0
 
     now = datetime.now(UTC).replace(tzinfo=None)
@@ -207,4 +363,7 @@ def seed_if_empty(db: Session) -> int:
         db.add(incident)
 
     db.commit()
+    analyses = seed_analyses_for_incidents_missing(db)
+    if analyses:
+        print(f"Seeded {analyses} MOCK analyses")
     return len(SAMPLE_INCIDENTS)
