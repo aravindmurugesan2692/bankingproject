@@ -41,9 +41,12 @@ class Settings(BaseSettings):
     pagerduty_api_token: str = ""
     pagerduty_timeout_seconds: float = 30.0
 
+    # Microsoft Graph / Teams (Phase 5) — live only when MOCK_MODE=false and all three set
     microsoft_tenant_id: str = ""
     microsoft_client_id: str = ""
     microsoft_client_secret: str = ""
+    microsoft_graph_base_url: str = "https://graph.microsoft.com/v1.0"
+    microsoft_graph_timeout_seconds: float = 30.0
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -81,6 +84,18 @@ class Settings(BaseSettings):
     @property
     def use_live_pagerduty(self) -> bool:
         return (not self.mock_mode) and self.pagerduty_configured
+
+    @property
+    def microsoft_graph_configured(self) -> bool:
+        return bool(
+            self.microsoft_tenant_id.strip()
+            and self.microsoft_client_id.strip()
+            and self.microsoft_client_secret.strip()
+        )
+
+    @property
+    def use_live_teams(self) -> bool:
+        return (not self.mock_mode) and self.microsoft_graph_configured
 
 
 @lru_cache

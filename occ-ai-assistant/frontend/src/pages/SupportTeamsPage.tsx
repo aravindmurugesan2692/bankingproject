@@ -125,7 +125,7 @@ export function SupportTeamsPage() {
 
             <p className="text-xs text-[var(--color-muted)]">
               Used when OCC approves an incident — ServiceNow create then PagerDuty page (MOCK by
-              default). Teams bridges are Phase 5.
+              default). Create Teams bridges from Bridge Management after approval.
             </p>
           </section>
         )}

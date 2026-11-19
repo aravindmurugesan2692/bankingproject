@@ -112,6 +112,10 @@ export function DashboardPage() {
             →{' '}
             <Link className="font-medium text-teal-800 underline" to="/pagerduty">
               PagerDuty
+            </Link>{' '}
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/bridges">
+              Teams bridges
             </Link>
           </p>
         </div>
@@ -223,11 +227,13 @@ export function DashboardPage() {
         <section className="rounded-xl border border-[var(--color-slate-line)] bg-white/95 shadow-sm">
           <div className="flex items-center justify-between border-b border-[var(--color-slate-line)] px-4 py-3">
             <h3 className="text-sm font-semibold">Active Teams bridges</h3>
-            <MockBadge />
+            <Link to="/bridges" className="text-xs font-medium text-teal-800 underline">
+              Manage
+            </Link>
           </div>
           <ul className="divide-y divide-[var(--color-slate-line)]">
             {data.active_bridges.map((bridge) => (
-              <li key={`${bridge.bridge}-${bridge.incident_id}`} className="px-4 py-3 text-sm">
+              <li key={`${bridge.bridge}-${bridge.incident_id}-${bridge.bridge_id || ''}`} className="px-4 py-3 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-[var(--color-ink)]">{bridge.bridge}</span>
                   <span className="inline-flex items-center gap-1 text-xs text-teal-700">
@@ -237,10 +243,14 @@ export function DashboardPage() {
                 </div>
                 <p className="mt-1 text-[var(--color-muted)]">{bridge.title}</p>
                 <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">
-                  {bridge.incident_id} · {bridge.participants} participants
+                  {bridge.incident_id} · {bridge.participants} invited
+                  {bridge.mock ? ' · MOCK' : ''}
                 </p>
               </li>
             ))}
+            {!data.active_bridges.length && (
+              <li className="px-4 py-3 text-sm text-[var(--color-muted)]">No active bridges</li>
+            )}
           </ul>
         </section>
 

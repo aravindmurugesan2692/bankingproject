@@ -10,6 +10,7 @@ import type {
   IncidentCreateResponse,
   PagerDutyNotification,
   SupportTeam,
+  TeamsBridge,
 } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -128,4 +129,48 @@ export function acknowledgePagerDuty(
     `/pagerduty/notifications/${notificationId}/acknowledge`,
     { method: 'POST' },
   )
+}
+
+export function listBridges(): Promise<TeamsBridge[]> {
+  return request<TeamsBridge[]>('/bridges')
+}
+
+export function createBridge(
+  incidentId: number,
+  payload: { actor?: string; bridge_code?: string; invite?: boolean } = {},
+): Promise<TeamsBridge> {
+  return request<TeamsBridge>(`/bridges/incidents/${incidentId}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function openBridge(
+  bridgeId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<TeamsBridge> {
+  return request<TeamsBridge>(`/bridges/${bridgeId}/open`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function endBridge(
+  bridgeId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<TeamsBridge> {
+  return request<TeamsBridge>(`/bridges/${bridgeId}/end`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function inviteBridge(
+  bridgeId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<TeamsBridge> {
+  return request<TeamsBridge>(`/bridges/${bridgeId}/invite`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
 }

@@ -159,6 +159,45 @@ class PagerDutyNotificationRead(BaseModel):
     created_at: datetime
 
 
+class TeamsBridgeRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    occ_incident_id: str
+    servicenow_number: str | None
+    bridge_code: str
+    title: str
+    provider: str
+    meeting_id: str
+    meeting_url: str
+    status: str
+    created_at: datetime
+    started_at: datetime | None
+    ended_at: datetime | None
+    invited_responders: list[dict] = []
+    invited_count: int = 0
+    invited_at: datetime | None
+    is_mock: bool
+    created_by: str
+
+
+class BridgeCreateRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    bridge_code: str | None = Field(default=None, max_length=32)
+    invite: bool = True
+    incident_id: int | None = None
+
+
+class BridgeActorRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class BridgeInviteRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    responders: list[dict] | None = None
+
+
 class DashboardBundle(BaseModel):
     summary: DashboardSummary
     active_incidents: list[IncidentRead]
@@ -168,6 +207,7 @@ class DashboardBundle(BaseModel):
     active_bridges: list[dict]
     pending_acknowledgements: list[dict]
     pagerduty_notifications: list[PagerDutyNotificationRead] = []
+    teams_bridges: list[TeamsBridgeRead] = []
     mock_mode: bool
     data_label: str
 
@@ -179,6 +219,7 @@ class HealthResponse(BaseModel):
     llm_configured: bool = False
     servicenow_configured: bool = False
     pagerduty_configured: bool = False
+    microsoft_graph_configured: bool = False
 
 
 class RecommendedTeam(BaseModel):

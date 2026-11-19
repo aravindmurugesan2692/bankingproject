@@ -16,4 +16,5 @@ def health() -> HealthResponse:
         llm_configured=bool(settings.openai_api_key.strip()),
         servicenow_configured=settings.servicenow_configured,
         pagerduty_configured=settings.pagerduty_configured,
+        microsoft_graph_configured=settings.microsoft_graph_configured,
     )

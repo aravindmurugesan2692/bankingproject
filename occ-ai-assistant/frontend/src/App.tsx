@@ -5,6 +5,7 @@ import { AnalysisPage } from './pages/AnalysisPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { InitiateIncidentPage } from './pages/InitiateIncidentPage'
 import { ApprovalsPage } from './pages/ApprovalsPage'
+import { BridgesPage } from './pages/BridgesPage'
 import { PagerDutyPage } from './pages/PagerDutyPage'
 import { SupportTeamsPage } from './pages/SupportTeamsPage'
 
@@ -20,7 +21,7 @@ export default function App() {
           <Route path="management" element={<ComingSoonPage />} />
           <Route path="pagerduty" element={<PagerDutyPage />} />
           <Route path="servicenow" element={<ComingSoonPage />} />
-          <Route path="bridges" element={<ComingSoonPage />} />
+          <Route path="bridges" element={<BridgesPage />} />
           <Route path="participation" element={<ComingSoonPage />} />
           <Route path="timeline" element={<ComingSoonPage />} />
           <Route path="reports" element={<ComingSoonPage />} />

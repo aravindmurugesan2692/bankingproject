@@ -1,8 +1,8 @@
-# OCC AI Assistant — Phase 4
+# OCC AI Assistant — Phase 5
 
-Full runnable OCC slice through **PagerDuty notifications** (MOCK by default).
+Full runnable OCC slice through **Microsoft Teams bridge automation** (MOCK by default).
 
-Phases included: 1 dashboard/initiate → 2 AI analysis → 3 approvals + ServiceNow → **4 PagerDuty**.
+Phases included: 1 dashboard/initiate → 2 AI analysis → 3 approvals + ServiceNow → 4 PagerDuty → **5 Teams bridges**.
 
 Banking Java app and `occ-bridge/` are untouched.
 
@@ -10,13 +10,11 @@ Banking Java app and `occ-bridge/` are untouched.
 
 1. Initiate incident → auto AI analysis  
 2. OCC Approvals → edit severity/teams/description  
-3. **Approve** → ServiceNow create → **PagerDuty page approved teams**  
-4. Track notify/ack timestamps, escalation status, PD id/URL  
-5. Linked IDs: OCC + ServiceNow + PagerDuty  
+3. **Approve** → ServiceNow create → PagerDuty page approved teams  
+4. **Teams Bridge Management** → create/associate meeting, invite approved responders, open/end  
+5. Store meeting ID/URL, create/start/end times (only when actions run), status, OCC linkage  
 
-**Never pages without explicit OCC approval.** Reject creates no SN and no PD pages.
-
-Teams bridges are Phase 5 (not started).
+**No real-time attendance** (Phase 6). Start/end times are not fabricated.
 
 ## Quick start
 
@@ -40,33 +38,35 @@ npm install && npm run dev
 cd occ-ai-assistant/backend && source .venv/bin/activate && pytest -q
 ```
 
-## PagerDuty behaviour
+## Teams bridge behaviour
 
 | Condition | Result |
 |-----------|--------|
-| Not OCC-approved | Notify APIs return 400 |
-| `MOCK_MODE=true` or no `PAGERDUTY_API_KEY` | MOCK PD id/URL per team |
-| Live key + `MOCK_MODE=false` | Incidents API create (placeholder service IDs still mock) |
-| Re-notify | Idempotent — existing team pages reused |
+| Incident not Approved/Active | Create returns 400 |
+| `MOCK_MODE=true` or missing Graph creds | MOCK meeting id/URL |
+| Live Graph configured + `MOCK_MODE=false` | Attempts Graph create; falls back to MOCK on failure |
+| Open / End | Sets `started_at` / `ended_at` to the real action time only |
+| Invite | MOCK invites to approved team responders |
 
-Env: `PAGERDUTY_API_KEY`, `PAGERDUTY_API_URL` (see `.env.example`).
+Env: `MICROSOFT_TENANT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` (see `.env.example`).
+
+Conferencing is modular under `backend/app/services/conferencing/` (mock + Microsoft Graph providers).
 
 ## Key APIs
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/pagerduty/notifications` | All PD pages |
-| GET | `/api/pagerduty/incidents/{id}/notifications` | Pages for one incident |
-| POST | `/api/pagerduty/notifications/{id}/acknowledge` | Record acknowledgement |
-| POST | `/api/pagerduty/incidents/{id}/notify` | Idempotent re-page (approved only) |
-| POST | `/api/approvals/{id}/approve` | Approve → SN → PD pages |
+| GET | `/api/bridges` | List bridges |
+| POST | `/api/bridges/incidents/{id}` | Create (+ optional invite) |
+| POST | `/api/bridges/{id}/open` | Mark open / set started_at |
+| POST | `/api/bridges/{id}/end` | End / set ended_at |
+| POST | `/api/bridges/{id}/invite` | Invite approved responders |
 
 ## Credentials
 
 - Demo: none  
-- Optional live PD: `PAGERDUTY_API_KEY` (+ `MOCK_MODE=false`)  
-- Optional live SN / LLM: see earlier phases  
+- Optional live Teams: Microsoft Graph app registration (tenant/client/secret) + `MOCK_MODE=false`  
 
 ## Waiting for approval
 
-Do **not** start Phase 5 (Teams bridges) until the user approves Phase 4.
+Do **not** start Phase 6 (attendance / timeline) until the user approves Phase 5.

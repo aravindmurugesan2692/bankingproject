@@ -38,6 +38,10 @@ class ApprovalAction(str, PyEnum):
     SERVICENOW_SKIP_DUPLICATE = "servicenow_skip_duplicate"
     PAGERDUTY_NOTIFY = "pagerduty_notify"
     PAGERDUTY_ACK = "pagerduty_ack"
+    BRIDGE_CREATE = "bridge_create"
+    BRIDGE_OPEN = "bridge_open"
+    BRIDGE_END = "bridge_end"
+    BRIDGE_INVITE = "bridge_invite"
 
 
 class IncidentPriority(str, PyEnum):
@@ -124,6 +128,9 @@ class Incident(Base):
     pagerduty_notifications: Mapped[list["PagerDutyNotification"]] = relationship(
         back_populates="incident", cascade="all, delete-orphan"
     )
+    teams_bridges: Mapped[list["TeamsBridge"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
 
 
 class IncidentAnalysis(Base):
@@ -200,3 +207,43 @@ class PagerDutyNotification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     incident: Mapped["Incident"] = relationship(back_populates="pagerduty_notifications")
+
+
+class TeamsBridge(Base):
+    """Teams (or mock) conference bridge linked to an OCC incident.
+
+    Timestamps are set only when the corresponding action occurs —
+    do not fabricate start/end or invent live attendance (Phase 6).
+    """
+
+    __tablename__ = "teams_bridges"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+    servicenow_number: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    bridge_code: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(String(64), default="mock")  # mock | microsoft_graph
+
+    meeting_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    meeting_url: Mapped[str] = mapped_column(String(1024), default="")
+    status: Mapped[str] = mapped_column(
+        String(32), default="created"
+    )  # created | open | ended
+
+    # created_at always set; started_at / ended_at only on open / end actions
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Invited responders (JSON list of {name, team_slug, email?}) — not live attendance
+    invited_responders: Mapped[str | None] = mapped_column(Text, nullable=True)
+    invited_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
+
+    incident: Mapped["Incident"] = relationship(back_populates="teams_bridges")

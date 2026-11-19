@@ -1,5 +1,6 @@
 """Dashboard summary and mock-labeled aggregates."""
 
+import json
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
@@ -8,13 +9,21 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
-from app.models import Incident, IncidentPriority, IncidentStatus, PagerDutyNotification
+from app.models import (
+    Incident,
+    IncidentPriority,
+    IncidentStatus,
+    PagerDutyNotification,
+    TeamsBridge,
+)
 from app.schemas import (
     DashboardBundle,
     DashboardSummary,
     IncidentRead,
     PagerDutyNotificationRead,
+    TeamsBridgeRead,
 )
+from app.services.bridges import invited_count
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -199,6 +208,33 @@ def dashboard_bundle(db: Session = Depends(get_db)) -> DashboardBundle:
     if not pending_acks and not pd_rows:
         pending_acks = MOCK_PENDING_ACKS
 
+    bridge_rows = (
+        db.query(TeamsBridge)
+        .order_by(TeamsBridge.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    live_active = [
+        {
+            "bridge": b.bridge_code,
+            "incident_id": b.occ_incident_id,
+            "title": b.title,
+            # Invited count only — not live attendance (Phase 6)
+            "participants": invited_count(b),
+            "status": b.status.capitalize() if b.status != "open" else "Live",
+            "mock": b.is_mock,
+            "meeting_url": b.meeting_url,
+            "bridge_id": b.id,
+        }
+        for b in bridge_rows
+        if b.status in {"created", "open"}
+    ]
+    active_bridges = live_active if (live_active or bridge_rows) else MOCK_BRIDGES
+
+    # Keep summary.active_bridges aligned with real open/created bridges when present
+    if bridge_rows:
+        summary.active_bridges = len(live_active)
+
     label = "MOCK DATA" if settings.mock_mode else "LIVE DATA"
     return DashboardBundle(
         summary=summary,
@@ -206,11 +242,48 @@ def dashboard_bundle(db: Session = Depends(get_db)) -> DashboardBundle:
         recent_incidents=[IncidentRead.model_validate(r) for r in recent_rows],
         priority_distribution=priority_distribution,
         recent_activities=MOCK_ACTIVITIES,
-        active_bridges=MOCK_BRIDGES,
+        active_bridges=active_bridges,
         pending_acknowledgements=pending_acks,
         pagerduty_notifications=[
             PagerDutyNotificationRead.model_validate(r) for r in pd_rows
         ],
+        teams_bridges=_serialize_bridges(bridge_rows[:8]),
         mock_mode=settings.mock_mode,
         data_label=label,
     )
+
+
+def _serialize_bridges(rows: list[TeamsBridge]) -> list[TeamsBridgeRead]:
+    out: list[TeamsBridgeRead] = []
+    for row in rows:
+        invited: list[dict] = []
+        if row.invited_responders:
+            try:
+                parsed = json.loads(row.invited_responders)
+                if isinstance(parsed, list):
+                    invited = [x for x in parsed if isinstance(x, dict)]
+            except json.JSONDecodeError:
+                invited = []
+        out.append(
+            TeamsBridgeRead(
+                id=row.id,
+                incident_id=row.incident_id,
+                occ_incident_id=row.occ_incident_id,
+                servicenow_number=row.servicenow_number,
+                bridge_code=row.bridge_code,
+                title=row.title,
+                provider=row.provider,
+                meeting_id=row.meeting_id,
+                meeting_url=row.meeting_url,
+                status=row.status,
+                created_at=row.created_at,
+                started_at=row.started_at,
+                ended_at=row.ended_at,
+                invited_responders=invited,
+                invited_count=len(invited),
+                invited_at=row.invited_at,
+                is_mock=row.is_mock,
+                created_by=row.created_by,
+            )
+        )
+    return out
