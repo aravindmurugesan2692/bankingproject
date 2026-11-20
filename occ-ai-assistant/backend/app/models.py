@@ -59,6 +59,9 @@ class ApprovalAction(str, PyEnum):
     CLOSURE_REJECT = "closure_reject"
     CLOSURE_SN_RESOLVE = "closure_sn_resolve"
     CLOSURE_PD_RESOLVE = "closure_pd_resolve"
+    SECURITY_DENIED = "security_denied"
+    SETTINGS_UPDATE = "settings_update"
+    AUTH_DEMO_SWITCH = "auth_demo_switch"
 
 
 class IncidentPriority(str, PyEnum):
@@ -219,6 +222,32 @@ class ApprovalAuditEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     incident: Mapped["Incident"] = relationship(back_populates="approval_events")
+
+
+class SecurityAuditEvent(Base):
+    """Auth / settings / permission audit — not tied to an incident FK."""
+
+    __tablename__ = "security_audit_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    role: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    detail: Mapped[str] = mapped_column(Text, default="")
+    path: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class RuntimeSetting(Base):
+    """Admin-tunable runtime flags (never store API secrets here)."""
+
+    __tablename__ = "runtime_settings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    value: Mapped[str] = mapped_column(Text, default="")
+    updated_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 class PagerDutyNotification(Base):

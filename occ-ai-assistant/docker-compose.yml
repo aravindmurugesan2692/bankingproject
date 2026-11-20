@@ -1,5 +1,8 @@
-# Phase 1 stub — full Docker polish is Phase 9.
-# Local Phase 1 development prefers the README run commands (uvicorn + vite).
+# Full-stack OCC AI Assistant (Phase 9)
+# Usage:
+#   cp .env.example .env   # never commit secrets
+#   docker compose up --build
+# UI: http://localhost:8080  API (direct): http://localhost:8000/api/health
 
 services:
   backend:
@@ -9,20 +12,39 @@ services:
     ports:
       - "8000:8000"
     environment:
-      MOCK_MODE: "true"
-      DATABASE_URL: sqlite:////data/occ_ai_assistant.db
-      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000
+      MOCK_MODE: ${MOCK_MODE:-true}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/occ_ai_assistant.db}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173}
+      AUTH_MODE: ${AUTH_MODE:-demo}
+      AUTH_DEMO_ENABLED: ${AUTH_DEMO_ENABLED:-true}
+      # Secrets from host env / .env when present — never baked into images
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SERVICENOW_INSTANCE_URL: ${SERVICENOW_INSTANCE_URL:-}
+      SERVICENOW_USERNAME: ${SERVICENOW_USERNAME:-}
+      SERVICENOW_PASSWORD: ${SERVICENOW_PASSWORD:-}
+      SERVICENOW_CLIENT_ID: ${SERVICENOW_CLIENT_ID:-}
+      SERVICENOW_CLIENT_SECRET: ${SERVICENOW_CLIENT_SECRET:-}
+      PAGERDUTY_API_KEY: ${PAGERDUTY_API_KEY:-}
+      MICROSOFT_TENANT_ID: ${MICROSOFT_TENANT_ID:-}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-}
     volumes:
       - occ-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:80"
+      - "8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   occ-data:

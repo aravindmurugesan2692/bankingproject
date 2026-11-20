@@ -316,7 +316,9 @@ async def _resolve_servicenow(
             f"Remediation:\n{closure.remediation_notes}"
         )[:4000],
     }
-    if not incident.servicenow_sys_id or not settings.use_live_servicenow:
+    from app.integrations import live_servicenow
+
+    if not incident.servicenow_sys_id or not live_servicenow():
         closure.servicenow_resolve_mock = True
         _audit_sn = {
             "mock": True,
@@ -349,8 +351,10 @@ async def _resolve_pagerduty(db: Session, incident: Incident) -> dict[str, Any]:
             note.escalation_status = "resolved"
         resolved_ids.append(note.pd_incident_id)
 
-    if not settings.use_live_pagerduty or not resolved_ids:
+    from app.integrations import live_pagerduty
+
+    if not live_pagerduty() or not resolved_ids:
         return {"mock": True, "pd_incident_ids": resolved_ids}
 
-    # Live resolve would call PD API per id; keep modular MOCK-safe
+    # Live resolve would call PD API per id; keep modular MOCK-safe (no invented creds)
     return {"mock": False, "pd_incident_ids": resolved_ids, "note": "live path placeholder"}

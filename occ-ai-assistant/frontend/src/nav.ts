@@ -35,5 +35,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Incident Timeline', path: '/timeline', icon: Activity, phaseReady: true },
   { label: 'AI Incident Reports', path: '/reports', icon: FileText, phaseReady: true },
   { label: 'Support Team Configuration', path: '/teams-config', icon: Network, phaseReady: true },
-  { label: 'Settings', path: '/settings', icon: Settings, phaseReady: false },
+  { label: 'Settings', path: '/settings', icon: Settings, phaseReady: true },
 ]
