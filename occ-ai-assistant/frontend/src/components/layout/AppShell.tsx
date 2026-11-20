@@ -1,11 +1,18 @@
 import { Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { setApiAuthHeaders } from '../../api/client'
+import { roleLabel, useAuth } from '../../auth'
 import { NAV_ITEMS } from '../../nav'
 import { MockBadge } from '../MockBadge'
 
 export function AppShell() {
   const [open, setOpen] = useState(false)
+  const auth = useAuth()
+
+  useEffect(() => {
+    setApiAuthHeaders(auth.headers)
+  }, [auth.headers])
 
   return (
     <div className="app-shell-bg flex min-h-screen">
@@ -19,7 +26,7 @@ export function AppShell() {
             Operations Control Center
           </p>
           <h1 className="mt-1 text-xl font-bold tracking-tight text-white">OCC AI Assistant</h1>
-          <p className="mt-2 text-xs text-slate-400">Phase 7 · AI reports</p>
+          <p className="mt-2 text-xs text-slate-400">Phase 9 · Security / deploy</p>
           <div className="mt-3">
             <MockBadge label="MOCK MODE" />
           </div>
@@ -77,7 +84,8 @@ export function AppShell() {
             </button>
             <div>
               <p className="text-xs text-[var(--color-muted)]">Signed in as</p>
-              <p className="text-sm font-semibold text-[var(--color-ink)]">OCC Engineer · Demo User</p>
+              <p className="text-sm font-semibold text-[var(--color-ink)]">{auth.displayName}</p>
+              <p className="text-[11px] text-[var(--color-muted)]">{roleLabel(auth.role)}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 text-xs text-[var(--color-muted)]">

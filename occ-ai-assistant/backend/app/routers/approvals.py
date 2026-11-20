@@ -7,8 +7,10 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.auth import RequireApprove, RequireReject
 from app.config import get_settings
 from app.database import get_db
+from app.errors import sanitize_message
 from app.models import (
     PRIORITY_FROM_P_CODE,
     ApprovalAction,
@@ -226,7 +228,10 @@ def update_approval_draft(
 
 @router.post("/{incident_id}/approve", response_model=ApprovalDecisionResponse)
 async def approve_incident(
-    incident_id: int, payload: ApprovalDecide, db: Session = Depends(get_db)
+    incident_id: int,
+    payload: ApprovalDecide,
+    principal: RequireApprove,
+    db: Session = Depends(get_db),
 ) -> ApprovalDecisionResponse:
     incident = db.query(Incident).filter(Incident.id == incident_id).first()
     if not incident:
@@ -266,12 +271,16 @@ async def approve_incident(
             analysis_summary=analysis.summary if analysis else None,
         )
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=502, detail=f"ServiceNow create failed: {exc}") from exc
+        raise HTTPException(
+            status_code=502,
+            detail=sanitize_message(f"ServiceNow create failed: {type(exc).__name__}"),
+        ) from exc
 
+    actor = payload.actor or principal.display_name
     incident.servicenow_number = sn_result.number
     incident.servicenow_sys_id = sn_result.sys_id
     incident.servicenow_is_mock = sn_result.is_mock
-    incident.approved_by = payload.actor
+    incident.approved_by = actor
     incident.approved_at = utc_now()
     incident.status = IncidentStatus.APPROVED.value
     incident.priority = PRIORITY_FROM_P_CODE.get(severity, incident.priority)
@@ -282,8 +291,11 @@ async def approve_incident(
         db,
         incident,
         action=ApprovalAction.APPROVE.value,
-        actor=payload.actor,
-        detail=f"Approved severity {severity}; teams={team_names}",
+        actor=actor,
+        detail=(
+            f"Approved severity {severity}; teams={team_names} "
+            f"(role={principal.role.value})"
+        ),
         teams=team_names,
         severity=severity,
     )
@@ -295,7 +307,7 @@ async def approve_incident(
             if sn_result.duplicate
             else ApprovalAction.SERVICENOW_CREATE.value
         ),
-        actor=payload.actor,
+        actor=actor,
         detail=(
             f"{'MOCK ' if sn_result.is_mock else ''}ServiceNow "
             f"{sn_result.number} / {sn_result.sys_id}"
@@ -316,7 +328,7 @@ async def approve_incident(
             db,
             incident,
             action=ApprovalAction.PAGERDUTY_NOTIFY.value,
-            actor=payload.actor,
+            actor=actor,
             detail=(
                 f"{'MOCK ' if row.is_mock else ''}PagerDuty {row.pd_incident_id} "
                 f"→ {row.team_name} ({row.escalation_status})"
@@ -349,7 +361,10 @@ async def approve_incident(
 
 @router.post("/{incident_id}/reject", response_model=ApprovalDecisionResponse)
 def reject_incident(
-    incident_id: int, payload: ApprovalDecide, db: Session = Depends(get_db)
+    incident_id: int,
+    payload: ApprovalDecide,
+    principal: RequireReject,
+    db: Session = Depends(get_db),
 ) -> ApprovalDecisionResponse:
     incident = db.query(Incident).filter(Incident.id == incident_id).first()
     if not incident:
@@ -359,16 +374,17 @@ def reject_incident(
     if not payload.rejection_reason or not payload.rejection_reason.strip():
         raise HTTPException(status_code=422, detail="rejection_reason is required")
 
+    actor = payload.actor or principal.display_name
     incident.status = IncidentStatus.REJECTED.value
     incident.rejection_reason = payload.rejection_reason.strip()
-    incident.approved_by = payload.actor
+    incident.approved_by = actor
     incident.approved_at = utc_now()
 
     _add_audit(
         db,
         incident,
         action=ApprovalAction.REJECT.value,
-        actor=payload.actor,
+        actor=actor,
         detail=incident.rejection_reason,
         teams=_slug_list(incident),
         severity=incident.working_severity,

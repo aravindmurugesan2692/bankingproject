@@ -22,17 +22,29 @@ import type {
   ManagementDetail,
   ManagementHistoryResponse,
   ReportingMetrics,
+  SettingsStatus,
 } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
+/** Demo identity headers — set by AuthProvider; never carries API secrets. */
+let authHeaders: Record<string, string> = {
+  'X-OCC-User': 'OCC Engineer · Demo User',
+  'X-OCC-Role': 'occ_engineer',
+}
+
+export function setApiAuthHeaders(headers: Record<string, string>) {
+  authHeaders = { ...headers }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
+    ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...(init?.headers ?? {}),
     },
-    ...init,
   })
 
   if (!response.ok) {
@@ -427,5 +439,47 @@ export function rejectClosure(
   return request<IncidentClosure>(`/management/closures/${closureId}/reject`, {
     method: 'POST',
     body: JSON.stringify({ actor, reason }),
+  })
+}
+
+export function fetchSettings(): Promise<SettingsStatus> {
+  return request<SettingsStatus>('/settings')
+}
+
+export function fetchWhoAmI(): Promise<{
+  user_id: string
+  display_name: string
+  role: string
+  permissions: string[]
+}> {
+  return request('/settings/me')
+}
+
+export function updateForceMocks(payload: {
+  force_mock_llm?: boolean
+  force_mock_servicenow?: boolean
+  force_mock_pagerduty?: boolean
+  force_mock_teams?: boolean
+  actor?: string
+}): Promise<SettingsStatus> {
+  return request<SettingsStatus>('/settings/force-mocks', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function recordDemoIdentity(payload: {
+  display_name: string
+  role: string
+}): Promise<{
+  ok: boolean
+  display_name: string
+  role: string
+  headers: Record<string, string>
+  note: string
+}> {
+  return request('/settings/demo-identity', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   })
 }

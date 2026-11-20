@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     microsoft_graph_base_url: str = "https://graph.microsoft.com/v1.0"
     microsoft_graph_timeout_seconds: float = 30.0
 
+    # Phase 9 — auth-ready demo identity (never put secrets in frontend)
+    auth_mode: str = "demo"  # demo | disabled | oidc (oidc stub → 501)
+    auth_demo_enabled: bool = True
+    auth_default_user: str = "OCC Engineer · Demo User"
+    auth_default_role: str = "occ_engineer"
+    # Comma-separated origins already above; expose debug errors only in local
+    expose_error_details: bool = False
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

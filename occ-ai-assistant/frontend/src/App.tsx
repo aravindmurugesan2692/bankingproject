@@ -10,6 +10,7 @@ import { ParticipationPage } from './pages/ParticipationPage'
 import { PagerDutyPage } from './pages/PagerDutyPage'
 import { ManagementPage } from './pages/ManagementPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { SupportTeamsPage } from './pages/SupportTeamsPage'
 import { TimelinePage } from './pages/TimelinePage'
 
@@ -30,7 +31,7 @@ export default function App() {
           <Route path="timeline" element={<TimelinePage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="teams-config" element={<SupportTeamsPage />} />
-          <Route path="settings" element={<ComingSoonPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

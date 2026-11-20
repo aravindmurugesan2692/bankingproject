@@ -465,3 +465,27 @@ export interface ReportingMetrics {
   data_label: string
   mock_mode: boolean
 }
+
+export interface IntegrationStatus {
+  name: string
+  configured: boolean
+  live_eligible: boolean
+  force_mock: boolean
+  effectively_mock: boolean
+  note: string
+}
+
+export interface SettingsStatus {
+  mock_mode: boolean
+  auth_mode: string
+  auth_demo_enabled: boolean
+  current_user: string
+  current_role: string
+  permissions: string[]
+  roles: { role: string; label: string; permissions: string[] }[]
+  integrations: IntegrationStatus[]
+  force_mocks: Record<string, boolean>
+  data_label: string
+  secrets_in_frontend: boolean
+  note: string
+}

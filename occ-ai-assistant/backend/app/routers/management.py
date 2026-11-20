@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.auth import RequireClosureApprove, RequireReject
 from app.database import get_db
 from app.models import Incident, IncidentClosure
 from app.schemas import (
@@ -174,13 +175,15 @@ def submit_closure(
 async def approve_closure(
     closure_id: int,
     payload: ClosureActorRequest,
+    principal: RequireClosureApprove,
     db: Session = Depends(get_db),
 ) -> IncidentClosure:
     row = db.query(IncidentClosure).filter(IncidentClosure.id == closure_id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Closure not found")
+    actor = payload.actor or principal.display_name
     return await closure_svc.approve_and_complete(
-        db, row, actor=payload.actor, close_fully=payload.close_fully
+        db, row, actor=actor, close_fully=payload.close_fully
     )
 
 
@@ -188,11 +191,13 @@ async def approve_closure(
 def reject_closure(
     closure_id: int,
     payload: ClosureRejectRequest,
+    principal: RequireReject,
     db: Session = Depends(get_db),
 ) -> IncidentClosure:
     row = db.query(IncidentClosure).filter(IncidentClosure.id == closure_id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Closure not found")
+    actor = payload.actor or principal.display_name
     return closure_svc.reject_closure(
-        db, row, actor=payload.actor, reason=payload.reason
+        db, row, actor=actor, reason=payload.reason
     )
