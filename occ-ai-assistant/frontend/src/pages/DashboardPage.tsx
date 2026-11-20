@@ -116,6 +116,14 @@ export function DashboardPage() {
             →{' '}
             <Link className="font-medium text-teal-800 underline" to="/bridges">
               Teams bridges
+            </Link>{' '}
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/participation">
+              Participation
+            </Link>{' '}
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/timeline">
+              Timeline
             </Link>
           </p>
         </div>

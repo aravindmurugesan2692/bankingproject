@@ -222,6 +222,126 @@ class HealthResponse(BaseModel):
     microsoft_graph_configured: bool = False
 
 
+class ResponderDirectoryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    display_name: str
+    email: str
+    team_slug: str
+    team_name: str
+    role: str
+    active: bool
+    is_mock: bool
+
+
+class BridgeAttendanceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    bridge_id: int
+    occ_incident_id: str
+    display_name: str
+    email: str
+    team_slug: str | None
+    team_name: str | None
+    event_kind: str
+    joined_at: datetime
+    left_at: datetime | None
+    source: str
+    verification_status: str
+    is_mock: bool
+    notes: str | None
+    recorded_by: str
+    created_at: datetime
+
+
+class AttendanceCreateRequest(BaseModel):
+    display_name: str = Field(..., min_length=1, max_length=128)
+    joined_at: datetime
+    email: str = Field(default="", max_length=255)
+    team_slug: str | None = None
+    team_name: str | None = None
+    left_at: datetime | None = None
+    event_kind: Literal["teams_join", "attendance_confirmed"] = "teams_join"
+    notes: str | None = Field(default=None, max_length=2000)
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class AttendanceActorRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class TimelineEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    occ_incident_id: str
+    event_type: str
+    occurred_at: datetime
+    actor: str
+    team_slug: str | None
+    team_name: str | None
+    detail: str
+    verification_status: str
+    source_system: str
+    source_ref: str | None
+    is_mock: bool
+    editable: bool
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class TimelineEventAuditRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    event_id: int
+    actor: str
+    change_summary: str
+    before_json: str | None
+    after_json: str | None
+    created_at: datetime
+
+
+class TimelineCreateRequest(BaseModel):
+    occurred_at: datetime
+    detail: str = Field(..., min_length=3, max_length=5000)
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    team_slug: str | None = None
+    team_name: str | None = None
+    verification_status: Literal["unverified", "verified"] = "unverified"
+    is_mock: bool = False
+
+
+class TimelineEditRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    detail: str | None = Field(default=None, max_length=5000)
+    occurred_at: datetime | None = None
+    verification_status: Literal["unverified", "verified", "edited"] | None = None
+    team_slug: str | None = None
+    team_name: str | None = None
+
+
+class ParticipationRow(BaseModel):
+    display_name: str
+    email: str = ""
+    team_slug: str | None = None
+    team_name: str | None = None
+    pd_notified: bool = False
+    pd_notified_at: datetime | None = None
+    pd_acknowledged: bool = False
+    pd_acknowledged_at: datetime | None = None
+    teams_joined: bool = False
+    teams_joined_at: datetime | None = None
+    attendance_confirmed: bool = False
+    attendance_confirmed_at: datetime | None = None
+    is_mock: bool = False
+
+
 class RecommendedTeam(BaseModel):
     team: str
     slug: str

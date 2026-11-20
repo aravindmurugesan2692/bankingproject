@@ -238,3 +238,69 @@ export interface PagerDutyNotification {
   is_mock: boolean
   created_at: string
 }
+
+export interface BridgeAttendance {
+  id: number
+  incident_id: number
+  bridge_id: number
+  occ_incident_id: string
+  display_name: string
+  email: string
+  team_slug: string | null
+  team_name: string | null
+  event_kind: string
+  joined_at: string
+  left_at: string | null
+  source: string
+  verification_status: string
+  is_mock: boolean
+  notes: string | null
+  recorded_by: string
+  created_at: string
+}
+
+export interface ParticipationRow {
+  display_name: string
+  email: string
+  team_slug: string | null
+  team_name: string | null
+  pd_notified: boolean
+  pd_notified_at: string | null
+  pd_acknowledged: boolean
+  pd_acknowledged_at: string | null
+  teams_joined: boolean
+  teams_joined_at: string | null
+  attendance_confirmed: boolean
+  attendance_confirmed_at: string | null
+  is_mock: boolean
+}
+
+export interface TimelineEvent {
+  id: number
+  incident_id: number
+  occ_incident_id: string
+  event_type: string
+  occurred_at: string
+  actor: string
+  team_slug: string | null
+  team_name: string | null
+  detail: string
+  verification_status: string
+  source_system: string
+  source_ref: string | null
+  is_mock: boolean
+  editable: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TimelineEventAudit {
+  id: number
+  event_id: number
+  actor: string
+  change_summary: string
+  before_json: string | null
+  after_json: string | null
+  created_at: string
+}

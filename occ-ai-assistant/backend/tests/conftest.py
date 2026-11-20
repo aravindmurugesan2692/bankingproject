@@ -15,7 +15,7 @@ os.environ["OPENAI_API_KEY"] = ""
 
 from app.database import Base, get_db  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app.seed import seed_support_teams  # noqa: E402
+from app.seed import seed_responder_directory, seed_support_teams  # noqa: E402
 
 
 @pytest.fixture()
@@ -32,6 +32,7 @@ def client():
     seed_db = TestingSessionLocal()
     try:
         seed_support_teams(seed_db)
+        seed_responder_directory(seed_db)
     finally:
         seed_db.close()
 

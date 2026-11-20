@@ -1,72 +1,48 @@
-# OCC AI Assistant — Phase 5
+# OCC AI Assistant — Phase 6
 
-Full runnable OCC slice through **Microsoft Teams bridge automation** (MOCK by default).
+Full runnable OCC slice through **team participation tracking + incident timeline**.
 
-Phases included: 1 dashboard/initiate → 2 AI analysis → 3 approvals + ServiceNow → 4 PagerDuty → **5 Teams bridges**.
-
-Banking Java app and `occ-bridge/` are untouched.
+Phases: 1–5 plus **6 participation / timeline**. Banking + `occ-bridge/` untouched.
 
 ## Workflow
 
-1. Initiate incident → auto AI analysis  
-2. OCC Approvals → edit severity/teams/description  
-3. **Approve** → ServiceNow create → PagerDuty page approved teams  
-4. **Teams Bridge Management** → create/associate meeting, invite approved responders, open/end  
-5. Store meeting ID/URL, create/start/end times (only when actions run), status, OCC linkage  
+1. Approve → ServiceNow → PagerDuty → Teams bridge  
+2. **Team Participation** — matrix of PD notify / PD ack / Teams join / attendance confirmed  
+3. Sync MOCK sample attendance (labeled; offsets from real `bridge.started_at`) or record manual joins with required `joined_at`  
+4. **Incident Timeline** — unified events with verification; editable manual entries + audit  
 
-**No real-time attendance** (Phase 6). Start/end times are not fabricated.
+**No AI transcript / work notes** (Phase 7). Timestamps are never fabricated.
 
 ## Quick start
 
 ```bash
-# Backend
 cd occ-ai-assistant/backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp ../.env.example .env
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
-# Frontend
 cd occ-ai-assistant/frontend
 npm install && npm run dev
-# → http://localhost:5173
 ```
 
 ### Tests
 
 ```bash
-cd occ-ai-assistant/backend && source .venv/bin/activate && pytest -q
+cd occ-ai-assistant/backend && python3 -m pytest -q
 ```
 
-## Teams bridge behaviour
+## Participation rules
 
-| Condition | Result |
-|-----------|--------|
-| Incident not Approved/Active | Create returns 400 |
-| `MOCK_MODE=true` or missing Graph creds | MOCK meeting id/URL |
-| Live Graph configured + `MOCK_MODE=false` | Attempts Graph create; falls back to MOCK on failure |
-| Open / End | Sets `started_at` / `ended_at` to the real action time only |
-| Invite | MOCK invites to approved team responders |
+| Signal | Meaning |
+|--------|---------|
+| `pd_notify` | Team was paged |
+| `pd_ack` | Page acknowledged |
+| `teams_join` | Person joined the bridge |
+| `attendance_confirmed` | OCC confirmed attendance |
 
-Env: `MICROSOFT_TENANT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` (see `.env.example`).
-
-Conferencing is modular under `backend/app/services/conferencing/` (mock + Microsoft Graph providers).
-
-## Key APIs
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/api/bridges` | List bridges |
-| POST | `/api/bridges/incidents/{id}` | Create (+ optional invite) |
-| POST | `/api/bridges/{id}/open` | Mark open / set started_at |
-| POST | `/api/bridges/{id}/end` | End / set ended_at |
-| POST | `/api/bridges/{id}/invite` | Invite approved responders |
-
-## Credentials
-
-- Demo: none  
-- Optional live Teams: Microsoft Graph app registration (tenant/client/secret) + `MOCK_MODE=false`  
+MOCK sample attendance requires the bridge to be **opened** first so join times offset from `started_at`.
 
 ## Waiting for approval
 
-Do **not** start Phase 6 (attendance / timeline) until the user approves Phase 5.
+Do **not** start Phase 7 until the user approves Phase 6.

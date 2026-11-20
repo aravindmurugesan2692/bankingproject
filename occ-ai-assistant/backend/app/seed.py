@@ -277,6 +277,45 @@ SUPPORT_TEAMS: list[dict] = [
 ]
 
 
+RESPONDER_DIRECTORY = [
+    {
+        "display_name": "A. Chen",
+        "email": "a.chen@responders.example.local",
+        "team_slug": "application-support",
+        "team_name": "Application Support",
+        "role": "primary",
+    },
+    {
+        "display_name": "M. Okonkwo",
+        "email": "m.okonkwo@responders.example.local",
+        "team_slug": "database",
+        "team_name": "Database",
+        "role": "primary",
+    },
+    {
+        "display_name": "S. Patel",
+        "email": "s.patel@responders.example.local",
+        "team_slug": "security",
+        "team_name": "Security",
+        "role": "secondary",
+    },
+    {
+        "display_name": "J. Rivera",
+        "email": "j.rivera@responders.example.local",
+        "team_slug": "network",
+        "team_name": "Network",
+        "role": "primary",
+    },
+    {
+        "display_name": "L. Nguyen",
+        "email": "l.nguyen@responders.example.local",
+        "team_slug": "linux",
+        "team_name": "Linux",
+        "role": "primary",
+    },
+]
+
+
 def seed_support_teams(db: Session) -> int:
     """Upsert support team catalog. Returns number of newly inserted rows."""
     inserted = 0
@@ -295,6 +334,36 @@ def seed_support_teams(db: Session) -> int:
                 pagerduty_escalation_policy_id=item["pagerduty_escalation_policy_id"],
                 active=True,
                 keywords=item["keywords"],
+            )
+        )
+        inserted += 1
+    if inserted:
+        db.commit()
+    return inserted
+
+
+def seed_responder_directory(db: Session) -> int:
+    """Upsert user→team mapping used for participation attribution."""
+    from app.models import ResponderDirectory
+
+    inserted = 0
+    for item in RESPONDER_DIRECTORY:
+        existing = (
+            db.query(ResponderDirectory)
+            .filter(ResponderDirectory.email == item["email"])
+            .first()
+        )
+        if existing:
+            continue
+        db.add(
+            ResponderDirectory(
+                display_name=item["display_name"],
+                email=item["email"],
+                team_slug=item["team_slug"],
+                team_name=item["team_name"],
+                role=item["role"],
+                active=True,
+                is_mock=True,
             )
         )
         inserted += 1
@@ -327,6 +396,9 @@ def seed_if_empty(db: Session) -> int:
     teams_inserted = seed_support_teams(db)
     if teams_inserted:
         print(f"Seeded {teams_inserted} support teams")
+    responders = seed_responder_directory(db)
+    if responders:
+        print(f"Seeded {responders} responder directory entries")
 
     existing = db.query(Incident).count()
     if existing > 0:
