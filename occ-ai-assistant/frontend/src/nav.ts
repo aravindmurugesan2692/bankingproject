@@ -33,7 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Teams Bridge Management', path: '/bridges', icon: Headset, phaseReady: true },
   { label: 'Team Participation', path: '/participation', icon: Users, phaseReady: true },
   { label: 'Incident Timeline', path: '/timeline', icon: Activity, phaseReady: true },
-  { label: 'AI Incident Reports', path: '/reports', icon: FileText, phaseReady: false },
+  { label: 'AI Incident Reports', path: '/reports', icon: FileText, phaseReady: true },
   { label: 'Support Team Configuration', path: '/teams-config', icon: Network, phaseReady: true },
   { label: 'Settings', path: '/settings', icon: Settings, phaseReady: false },
 ]

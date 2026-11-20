@@ -8,6 +8,7 @@ import { ApprovalsPage } from './pages/ApprovalsPage'
 import { BridgesPage } from './pages/BridgesPage'
 import { ParticipationPage } from './pages/ParticipationPage'
 import { PagerDutyPage } from './pages/PagerDutyPage'
+import { ReportsPage } from './pages/ReportsPage'
 import { SupportTeamsPage } from './pages/SupportTeamsPage'
 import { TimelinePage } from './pages/TimelinePage'
 
@@ -26,7 +27,7 @@ export default function App() {
           <Route path="bridges" element={<BridgesPage />} />
           <Route path="participation" element={<ParticipationPage />} />
           <Route path="timeline" element={<TimelinePage />} />
-          <Route path="reports" element={<ComingSoonPage />} />
+          <Route path="reports" element={<ReportsPage />} />
           <Route path="teams-config" element={<SupportTeamsPage />} />
           <Route path="settings" element={<ComingSoonPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

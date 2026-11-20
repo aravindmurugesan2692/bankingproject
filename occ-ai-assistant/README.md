@@ -1,48 +1,25 @@
-# OCC AI Assistant — Phase 6
+# OCC AI Assistant — Phase 7
 
-Full runnable OCC slice through **team participation tracking + incident timeline**.
+Full runnable OCC slice through **AI Bridge Assistant + ServiceNow work notes**.
 
-Phases: 1–5 plus **6 participation / timeline**. Banking + `occ-bridge/` untouched.
+Phases 1–6 plus **7 reports / work notes**. Banking + `occ-bridge/` untouched.
 
 ## Workflow
 
-1. Approve → ServiceNow → PagerDuty → Teams bridge  
-2. **Team Participation** — matrix of PD notify / PD ack / Teams join / attendance confirmed  
-3. Sync MOCK sample attendance (labeled; offsets from real `bridge.started_at`) or record manual joins with required `joined_at`  
-4. **Incident Timeline** — unified events with verification; editable manual entries + audit  
+1. OCC adds approved bridge transcript excerpts / manual notes (no invented activities)  
+2. **Generate AI bridge update** — structured summary/hypotheses from approved sources only  
+3. Root cause marked **unconfirmed** with clear disclaimer  
+4. **Preview** ServiceNow work note → OCC **approve** → **post** (MOCK by default; deduped)  
 
-**No AI transcript / work notes** (Phase 7). Timestamps are never fabricated.
+No closure automation (Phase 8).
 
 ## Quick start
 
 ```bash
-cd occ-ai-assistant/backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp ../.env.example .env
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-cd occ-ai-assistant/frontend
-npm install && npm run dev
-```
-
-### Tests
-
-```bash
 cd occ-ai-assistant/backend && python3 -m pytest -q
+cd occ-ai-assistant/frontend && npm run build && npm run dev
 ```
-
-## Participation rules
-
-| Signal | Meaning |
-|--------|---------|
-| `pd_notify` | Team was paged |
-| `pd_ack` | Page acknowledged |
-| `teams_join` | Person joined the bridge |
-| `attendance_confirmed` | OCC confirmed attendance |
-
-MOCK sample attendance requires the bridge to be **opened** first so join times offset from `started_at`.
 
 ## Waiting for approval
 
-Do **not** start Phase 7 until the user approves Phase 6.
+Do **not** start Phase 8 until the user approves Phase 7.

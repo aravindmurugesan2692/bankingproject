@@ -124,6 +124,10 @@ export function DashboardPage() {
             →{' '}
             <Link className="font-medium text-teal-800 underline" to="/timeline">
               Timeline
+            </Link>{' '}
+            →{' '}
+            <Link className="font-medium text-teal-800 underline" to="/reports">
+              AI reports
             </Link>
           </p>
         </div>

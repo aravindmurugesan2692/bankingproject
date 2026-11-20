@@ -46,6 +46,13 @@ class ApprovalAction(str, PyEnum):
     ATTENDANCE_CONFIRM = "attendance_confirm"
     TIMELINE_CREATE = "timeline_create"
     TIMELINE_EDIT = "timeline_edit"
+    BRIDGE_NOTE_ADD = "bridge_note_add"
+    BRIDGE_NOTE_APPROVE = "bridge_note_approve"
+    BRIDGE_AI_GENERATE = "bridge_ai_generate"
+    WORKNOTE_PREVIEW = "worknote_preview"
+    WORKNOTE_APPROVE = "worknote_approve"
+    WORKNOTE_POST = "worknote_post"
+    WORKNOTE_SKIP_DUPLICATE = "worknote_skip_duplicate"
 
 
 class IncidentPriority(str, PyEnum):
@@ -139,6 +146,15 @@ class Incident(Base):
         back_populates="incident", cascade="all, delete-orphan"
     )
     timeline_events: Mapped[list["TimelineEvent"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
+    bridge_notes: Mapped[list["BridgeNote"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
+    bridge_ai_updates: Mapped[list["BridgeAIUpdate"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
+    work_note_drafts: Mapped[list["WorkNoteDraft"]] = relationship(
         back_populates="incident", cascade="all, delete-orphan"
     )
 
@@ -376,3 +392,114 @@ class TimelineEventAudit(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     event: Mapped["TimelineEvent"] = relationship(back_populates="audits")
+
+
+class BridgeNote(Base):
+    """OCC-approved bridge transcript excerpt or manual note.
+
+    AI Bridge Assistant may only use notes that are approved.
+    Never invent bridge activities — content must be OCC-supplied.
+    """
+
+    __tablename__ = "bridge_notes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+    bridge_id: Mapped[int | None] = mapped_column(
+        ForeignKey("teams_bridges.id"), nullable=True, index=True
+    )
+
+    note_type: Mapped[str] = mapped_column(
+        String(64), default="manual"
+    )  # manual | transcript_excerpt
+    title: Mapped[str] = mapped_column(String(255), default="")
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    # When the note claims the activity occurred — OCC-provided, not invented
+    occurred_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    status: Mapped[str] = mapped_column(
+        String(32), default="draft"
+    )  # draft | approved | rejected
+    approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="bridge_notes")
+
+
+class BridgeAIUpdate(Base):
+    """Structured AI bridge update generated only from approved notes."""
+
+    __tablename__ = "bridge_ai_updates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    key_points: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
+    open_questions: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
+    next_actions: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
+    hypotheses: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
+    source_note_ids: Mapped[str] = mapped_column(Text, default="[]")  # JSON list of ints
+
+    root_cause_status: Mapped[str] = mapped_column(
+        String(64), default="unconfirmed"
+    )  # unconfirmed | insufficient_evidence
+    disclaimer: Mapped[str] = mapped_column(Text, nullable=False)
+
+    provider: Mapped[str] = mapped_column(String(64), default="heuristic")
+    model: Mapped[str] = mapped_column(String(128), default="mock-bridge-assistant-v1")
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="bridge_ai_updates")
+    work_notes: Mapped[list["WorkNoteDraft"]] = relationship(
+        back_populates="bridge_update", cascade="all, delete-orphan"
+    )
+
+
+class WorkNoteDraft(Base):
+    """ServiceNow work-note preview / post — post only after OCC approve; dedupe."""
+
+    __tablename__ = "work_note_drafts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+    bridge_update_id: Mapped[int | None] = mapped_column(
+        ForeignKey("bridge_ai_updates.id"), nullable=True, index=True
+    )
+
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+
+    status: Mapped[str] = mapped_column(
+        String(32), default="preview"
+    )  # preview | approved | posted | skipped_duplicate
+
+    servicenow_number: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    servicenow_sys_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    posted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    posted_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="work_note_drafts")
+    bridge_update: Mapped["BridgeAIUpdate | None"] = relationship(
+        back_populates="work_notes"
+    )
