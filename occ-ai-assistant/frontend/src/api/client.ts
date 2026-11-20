@@ -8,9 +8,13 @@ import type {
   IncidentAnalysis,
   IncidentCreatePayload,
   IncidentCreateResponse,
+  BridgeAttendance,
   PagerDutyNotification,
+  ParticipationRow,
   SupportTeam,
   TeamsBridge,
+  TimelineEvent,
+  TimelineEventAudit,
 } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -173,4 +177,71 @@ export function inviteBridge(
     method: 'POST',
     body: JSON.stringify({ actor }),
   })
+}
+
+export function listParticipation(incidentId: number): Promise<ParticipationRow[]> {
+  return request<ParticipationRow[]>(`/incidents/${incidentId}/participation`)
+}
+
+export function listAttendance(incidentId: number): Promise<BridgeAttendance[]> {
+  return request<BridgeAttendance[]>(`/incidents/${incidentId}/attendance`)
+}
+
+export function syncBridgeAttendance(
+  bridgeId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<BridgeAttendance[]> {
+  return request<BridgeAttendance[]>(`/bridges/${bridgeId}/attendance/sync`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function confirmAttendance(
+  attendanceId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<BridgeAttendance> {
+  return request<BridgeAttendance>(`/attendance/${attendanceId}/confirm`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function listTimeline(incidentId: number): Promise<TimelineEvent[]> {
+  return request<TimelineEvent[]>(`/timeline/incidents/${incidentId}`)
+}
+
+export function createTimelineEvent(
+  incidentId: number,
+  payload: {
+    occurred_at: string
+    detail: string
+    actor?: string
+    team_slug?: string
+    team_name?: string
+  },
+): Promise<TimelineEvent> {
+  return request<TimelineEvent>(`/timeline/incidents/${incidentId}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function editTimelineEvent(
+  eventId: number,
+  payload: {
+    actor?: string
+    detail?: string
+    occurred_at?: string
+    verification_status?: string
+  },
+): Promise<TimelineEvent> {
+  return request<TimelineEvent>(`/timeline/events/${eventId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function listTimelineAudits(eventId: number): Promise<TimelineEventAudit[]> {
+  return request<TimelineEventAudit[]>(`/timeline/events/${eventId}/audits`)
 }

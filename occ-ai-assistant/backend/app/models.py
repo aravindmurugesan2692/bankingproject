@@ -42,6 +42,10 @@ class ApprovalAction(str, PyEnum):
     BRIDGE_OPEN = "bridge_open"
     BRIDGE_END = "bridge_end"
     BRIDGE_INVITE = "bridge_invite"
+    ATTENDANCE_RECORD = "attendance_record"
+    ATTENDANCE_CONFIRM = "attendance_confirm"
+    TIMELINE_CREATE = "timeline_create"
+    TIMELINE_EDIT = "timeline_edit"
 
 
 class IncidentPriority(str, PyEnum):
@@ -129,6 +133,12 @@ class Incident(Base):
         back_populates="incident", cascade="all, delete-orphan"
     )
     teams_bridges: Mapped[list["TeamsBridge"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
+    bridge_attendances: Mapped[list["BridgeAttendance"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
+    timeline_events: Mapped[list["TimelineEvent"]] = relationship(
         back_populates="incident", cascade="all, delete-orphan"
     )
 
@@ -247,3 +257,122 @@ class TeamsBridge(Base):
     created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
 
     incident: Mapped["Incident"] = relationship(back_populates="teams_bridges")
+    attendances: Mapped[list["BridgeAttendance"]] = relationship(
+        back_populates="bridge", cascade="all, delete-orphan"
+    )
+
+
+class ResponderDirectory(Base):
+    """User → support-team mapping for participation attribution."""
+
+    __tablename__ = "responder_directory"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    display_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    team_slug: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    team_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    role: Mapped[str] = mapped_column(String(64), default="responder")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class BridgeAttendance(Base):
+    """Who joined a Teams bridge and when.
+
+    Timestamps must come from Graph, explicit OCC entry, or clearly labeled
+    MOCK sample offsets from a real bridge.started_at — never invented silently.
+    """
+
+    __tablename__ = "bridge_attendances"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    bridge_id: Mapped[int] = mapped_column(ForeignKey("teams_bridges.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+
+    display_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), default="")
+    team_slug: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    team_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    # Distinct participation kinds (not PD notify/ack)
+    event_kind: Mapped[str] = mapped_column(
+        String(64), default="teams_join"
+    )  # teams_join | attendance_confirmed
+
+    joined_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    left_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    source: Mapped[str] = mapped_column(
+        String(64), default="mock_sample"
+    )  # mock_sample | graph | manual
+    verification_status: Mapped[str] = mapped_column(
+        String(64), default="unverified"
+    )  # unverified | confirmed | disputed
+
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recorded_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="bridge_attendances")
+    bridge: Mapped["TeamsBridge"] = relationship(back_populates="attendances")
+
+
+class TimelineEvent(Base):
+    """Unified incident timeline with verification + edit audit."""
+
+    __tablename__ = "timeline_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+
+    # pd_notify | pd_ack | teams_join | attendance_confirmed | bridge_create |
+    # bridge_open | bridge_end | bridge_invite | manual
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+
+    actor: Mapped[str] = mapped_column(String(128), default="")
+    team_slug: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    team_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    detail: Mapped[str] = mapped_column(Text, default="")
+
+    verification_status: Mapped[str] = mapped_column(
+        String(64), default="unverified"
+    )  # unverified | verified | edited
+
+    source_system: Mapped[str] = mapped_column(
+        String(64), default="manual"
+    )  # pagerduty | teams | approval | manual | mock_sample
+    source_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    is_mock: Mapped[bool] = mapped_column(Boolean, default=False)
+    editable: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="timeline_events")
+    audits: Mapped[list["TimelineEventAudit"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
+
+
+class TimelineEventAudit(Base):
+    """Audit trail for timeline edits — never silent rewrites."""
+
+    __tablename__ = "timeline_event_audits"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("timeline_events.id"), index=True)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    change_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    before_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    after_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+    event: Mapped["TimelineEvent"] = relationship(back_populates="audits")

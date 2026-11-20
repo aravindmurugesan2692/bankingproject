@@ -6,8 +6,10 @@ import { DashboardPage } from './pages/DashboardPage'
 import { InitiateIncidentPage } from './pages/InitiateIncidentPage'
 import { ApprovalsPage } from './pages/ApprovalsPage'
 import { BridgesPage } from './pages/BridgesPage'
+import { ParticipationPage } from './pages/ParticipationPage'
 import { PagerDutyPage } from './pages/PagerDutyPage'
 import { SupportTeamsPage } from './pages/SupportTeamsPage'
+import { TimelinePage } from './pages/TimelinePage'
 
 export default function App() {
   return (
@@ -22,8 +24,8 @@ export default function App() {
           <Route path="pagerduty" element={<PagerDutyPage />} />
           <Route path="servicenow" element={<ComingSoonPage />} />
           <Route path="bridges" element={<BridgesPage />} />
-          <Route path="participation" element={<ComingSoonPage />} />
-          <Route path="timeline" element={<ComingSoonPage />} />
+          <Route path="participation" element={<ParticipationPage />} />
+          <Route path="timeline" element={<TimelinePage />} />
           <Route path="reports" element={<ComingSoonPage />} />
           <Route path="teams-config" element={<SupportTeamsPage />} />
           <Route path="settings" element={<ComingSoonPage />} />
