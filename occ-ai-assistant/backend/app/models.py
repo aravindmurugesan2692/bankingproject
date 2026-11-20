@@ -53,6 +53,12 @@ class ApprovalAction(str, PyEnum):
     WORKNOTE_APPROVE = "worknote_approve"
     WORKNOTE_POST = "worknote_post"
     WORKNOTE_SKIP_DUPLICATE = "worknote_skip_duplicate"
+    CLOSURE_DRAFT = "closure_draft"
+    CLOSURE_SUBMIT = "closure_submit"
+    CLOSURE_APPROVE = "closure_approve"
+    CLOSURE_REJECT = "closure_reject"
+    CLOSURE_SN_RESOLVE = "closure_sn_resolve"
+    CLOSURE_PD_RESOLVE = "closure_pd_resolve"
 
 
 class IncidentPriority(str, PyEnum):
@@ -124,6 +130,13 @@ class Incident(Base):
     resolution_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     bridge_active: Mapped[bool] = mapped_column(default=False)
 
+    # Phase 8 — service restore / closure stamps (OCC-provided, never AI-alone)
+    restored_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rca_status: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )  # unconfirmed | confirmed
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now
@@ -155,6 +168,9 @@ class Incident(Base):
         back_populates="incident", cascade="all, delete-orphan"
     )
     work_note_drafts: Mapped[list["WorkNoteDraft"]] = relationship(
+        back_populates="incident", cascade="all, delete-orphan"
+    )
+    closures: Mapped[list["IncidentClosure"]] = relationship(
         back_populates="incident", cascade="all, delete-orphan"
     )
 
@@ -503,3 +519,50 @@ class WorkNoteDraft(Base):
     bridge_update: Mapped["BridgeAIUpdate | None"] = relationship(
         back_populates="work_notes"
     )
+
+
+class IncidentClosure(Base):
+    """OCC-driven closure packet — never close on AI alone.
+
+    SN resolution / PD sync run only after OCC approve.
+    restored_at must be OCC-provided (not fabricated).
+    """
+
+    __tablename__ = "incident_closures"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    incident_id: Mapped[int] = mapped_column(ForeignKey("incidents.id"), index=True)
+    occ_incident_id: Mapped[str] = mapped_column(String(32), index=True)
+
+    # draft | pending_occ | approved | rejected | completed
+    status: Mapped[str] = mapped_column(String(32), default="draft", index=True)
+
+    restored_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    final_summary: Mapped[str] = mapped_column(Text, default="")
+    timeline_summary: Mapped[str] = mapped_column(Text, default="")
+    team_notes: Mapped[str] = mapped_column(Text, default="")
+    remediation_notes: Mapped[str] = mapped_column(Text, default="")
+
+    # unconfirmed | confirmed — OCC must set; AI alone never confirms
+    rca_status: Mapped[str] = mapped_column(String(64), default="unconfirmed")
+    rca_statement: Mapped[str] = mapped_column(Text, default="")
+
+    submitted_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rejected_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    servicenow_resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+    servicenow_resolve_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    pagerduty_resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+    pagerduty_resolve_mock: Mapped[bool] = mapped_column(Boolean, default=True)
+    sync_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_by: Mapped[str] = mapped_column(String(128), default="OCC Engineer")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+    incident: Mapped["Incident"] = relationship(back_populates="closures")

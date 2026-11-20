@@ -30,6 +30,9 @@ export interface Incident {
   ack_minutes: number | null
   resolution_minutes: number | null
   bridge_active: boolean
+  restored_at?: string | null
+  closed_at?: string | null
+  rca_status?: string | null
   created_at: string
   updated_at: string
   created_by: string
@@ -358,4 +361,107 @@ export interface WorkNoteDraft {
   posted_by: string | null
   created_by: string
   created_at: string
+}
+
+export interface IncidentClosure {
+  id: number
+  incident_id: number
+  occ_incident_id: string
+  status: string
+  restored_at: string | null
+  final_summary: string
+  timeline_summary: string
+  team_notes: string
+  remediation_notes: string
+  rca_status: string
+  rca_statement: string
+  submitted_by: string | null
+  submitted_at: string | null
+  approved_by: string | null
+  approved_at: string | null
+  rejected_by: string | null
+  rejected_at: string | null
+  rejection_reason: string | null
+  servicenow_resolved: boolean
+  servicenow_resolve_mock: boolean
+  pagerduty_resolved: boolean
+  pagerduty_resolve_mock: boolean
+  sync_detail: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ManagementHistoryItem {
+  id: number
+  occ_incident_id: string
+  servicenow_number: string | null
+  pagerduty_incident_ids: string[]
+  title: string
+  application_service: string
+  environment: string
+  priority: string
+  working_severity: string | null
+  status: string
+  assigned_teams: string[]
+  created_at: string
+  issue_start_time: string
+  ack_minutes: number | null
+  resolution_minutes: number | null
+  bridge_duration_minutes: number | null
+  restored_at: string | null
+  closed_at: string | null
+  rca_status: string | null
+  is_mock: boolean
+  closure_status: string | null
+}
+
+export interface ManagementHistoryResponse {
+  total: number
+  items: ManagementHistoryItem[]
+  data_label: string
+  mock_mode: boolean
+}
+
+export interface ManagementDetail {
+  incident: Incident
+  pagerduty_incident_ids: string[]
+  assigned_teams: string[]
+  bridge_duration_minutes: number | null
+  closure: IncidentClosure | null
+  timeline_event_count: number
+  analysis_category: string | null
+  is_mock: boolean
+  data_label: string
+}
+
+export interface ReportingMetrics {
+  total_incidents: number
+  by_category: { category: string; count: number }[]
+  by_support_team: { team_slug: string; count: number }[]
+  avg_ack_minutes: number | null
+  avg_resolution_minutes: number | null
+  repeat_incidents: {
+    key: string
+    count: number
+    application: string
+    sample_title: string
+    occ_ids: string[]
+    includes_mock: boolean
+  }[]
+  volume_by_application: { application: string; count: number }[]
+  volume_by_severity: { severity: string; count: number }[]
+  team_participation: { team: string; attendance_records: number }[]
+  sla_trends: {
+    month: string
+    incident_count: number
+    avg_ack_minutes: number | null
+    avg_resolution_minutes: number | null
+  }[]
+  closed_count: number
+  pending_closure_count: number
+  mock_incident_count: number
+  live_incident_count: number
+  data_label: string
+  mock_mode: boolean
 }

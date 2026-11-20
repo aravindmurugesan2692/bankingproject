@@ -64,6 +64,9 @@ class IncidentRead(BaseModel):
     ack_minutes: int | None
     resolution_minutes: int | None
     bridge_active: bool
+    restored_at: datetime | None = None
+    closed_at: datetime | None = None
+    rca_status: str | None = None
     created_at: datetime
     updated_at: datetime
     created_by: str
@@ -103,6 +106,9 @@ class IncidentRead(BaseModel):
                 "ack_minutes": data.ack_minutes,
                 "resolution_minutes": data.resolution_minutes,
                 "bridge_active": data.bridge_active,
+                "restored_at": getattr(data, "restored_at", None),
+                "closed_at": getattr(data, "closed_at", None),
+                "rca_status": getattr(data, "rca_status", None),
                 "created_at": data.created_at,
                 "updated_at": data.updated_at,
                 "created_by": data.created_by,
@@ -529,3 +535,123 @@ class ApprovalDecisionResponse(BaseModel):
     servicenow_duplicate: bool = False
     pagerduty_notifications: list[PagerDutyNotificationRead] = []
     audit_trail: list[ApprovalAuditRead]
+
+
+# --- Phase 8: closure + incident management / reporting ---
+
+
+class IncidentClosureRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    occ_incident_id: str
+    status: str
+    restored_at: datetime | None
+    final_summary: str
+    timeline_summary: str
+    team_notes: str
+    remediation_notes: str
+    rca_status: str
+    rca_statement: str
+    submitted_by: str | None
+    submitted_at: datetime | None
+    approved_by: str | None
+    approved_at: datetime | None
+    rejected_by: str | None
+    rejected_at: datetime | None
+    rejection_reason: str | None
+    servicenow_resolved: bool
+    servicenow_resolve_mock: bool
+    pagerduty_resolved: bool
+    pagerduty_resolve_mock: bool
+    sync_detail: str | None
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ClosureDraftUpdate(BaseModel):
+    restored_at: datetime | None = None
+    final_summary: str | None = Field(default=None, max_length=20000)
+    timeline_summary: str | None = Field(default=None, max_length=50000)
+    team_notes: str | None = Field(default=None, max_length=20000)
+    remediation_notes: str | None = Field(default=None, max_length=20000)
+    rca_status: Literal["unconfirmed", "confirmed"] | None = None
+    rca_statement: str | None = Field(default=None, max_length=10000)
+    refresh_timeline: bool = False
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class ClosureActorRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    close_fully: bool = True
+
+
+class ClosureRejectRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    reason: str = Field(..., min_length=3, max_length=5000)
+
+
+class ManagementHistoryItem(BaseModel):
+    id: int
+    occ_incident_id: str
+    servicenow_number: str | None
+    pagerduty_incident_ids: list[str] = []
+    title: str
+    application_service: str
+    environment: str
+    priority: str
+    working_severity: str | None = None
+    status: str
+    assigned_teams: list[str] = []
+    created_at: datetime
+    issue_start_time: datetime
+    ack_minutes: int | None
+    resolution_minutes: int | None
+    bridge_duration_minutes: int | None = None
+    restored_at: datetime | None = None
+    closed_at: datetime | None = None
+    rca_status: str | None = None
+    is_mock: bool
+    closure_status: str | None = None
+
+
+class ManagementHistoryResponse(BaseModel):
+    total: int
+    items: list[ManagementHistoryItem]
+    data_label: str
+    mock_mode: bool
+
+
+class ManagementDetail(BaseModel):
+    incident: IncidentRead
+    pagerduty_incident_ids: list[str] = []
+    assigned_teams: list[str] = []
+    bridge_duration_minutes: int | None = None
+    closure: IncidentClosureRead | None = None
+    timeline_event_count: int = 0
+    analysis_category: str | None = None
+    is_mock: bool
+    data_label: str
+
+
+class ReportingMetrics(BaseModel):
+    """Reporting from real app data — seeded rows labeled MOCK via is_mock / data_label."""
+
+    total_incidents: int
+    by_category: list[dict[str, Any]]
+    by_support_team: list[dict[str, Any]]
+    avg_ack_minutes: float | None
+    avg_resolution_minutes: float | None
+    repeat_incidents: list[dict[str, Any]]
+    volume_by_application: list[dict[str, Any]]
+    volume_by_severity: list[dict[str, Any]]
+    team_participation: list[dict[str, Any]]
+    sla_trends: list[dict[str, Any]]
+    closed_count: int
+    pending_closure_count: int
+    mock_incident_count: int
+    live_incident_count: int
+    data_label: str
+    mock_mode: bool

@@ -18,6 +18,10 @@ import type {
   TimelineEvent,
   TimelineEventAudit,
   WorkNoteDraft,
+  IncidentClosure,
+  ManagementDetail,
+  ManagementHistoryResponse,
+  ReportingMetrics,
 } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -325,5 +329,103 @@ export function postWorkNote(
   return request(`/work-notes/${draftId}/post`, {
     method: 'POST',
     body: JSON.stringify({ actor }),
+  })
+}
+
+export function searchManagementHistory(params: {
+  q?: string
+  status?: string
+  environment?: string
+  severity?: string
+  application?: string
+  is_mock?: boolean
+  limit?: number
+  offset?: number
+}): Promise<ManagementHistoryResponse> {
+  const qs = new URLSearchParams()
+  Object.entries(params).forEach(([k, v]) => {
+    if (v === undefined || v === '') return
+    qs.set(k, String(v))
+  })
+  const suffix = qs.toString() ? `?${qs}` : ''
+  return request<ManagementHistoryResponse>(`/management/history${suffix}`)
+}
+
+export function getManagementDetail(incidentId: number): Promise<ManagementDetail> {
+  return request<ManagementDetail>(`/management/incidents/${incidentId}`)
+}
+
+export function fetchReportingMetrics(): Promise<ReportingMetrics> {
+  return request<ReportingMetrics>('/management/metrics')
+}
+
+export function openClosure(
+  incidentId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<IncidentClosure> {
+  return request<IncidentClosure>(`/management/incidents/${incidentId}/closure`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function getClosure(
+  incidentId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<IncidentClosure> {
+  return request<IncidentClosure>(
+    `/management/incidents/${incidentId}/closure?actor=${encodeURIComponent(actor)}`,
+  )
+}
+
+export function updateClosure(
+  closureId: number,
+  payload: {
+    restored_at?: string | null
+    final_summary?: string
+    timeline_summary?: string
+    team_notes?: string
+    remediation_notes?: string
+    rca_status?: 'unconfirmed' | 'confirmed'
+    rca_statement?: string
+    refresh_timeline?: boolean
+    actor?: string
+  },
+): Promise<IncidentClosure> {
+  return request<IncidentClosure>(`/management/closures/${closureId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function submitClosure(
+  closureId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<IncidentClosure> {
+  return request<IncidentClosure>(`/management/closures/${closureId}/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function approveClosure(
+  closureId: number,
+  actor = 'OCC Engineer · Demo User',
+  closeFully = true,
+): Promise<IncidentClosure> {
+  return request<IncidentClosure>(`/management/closures/${closureId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ actor, close_fully: closeFully }),
+  })
+}
+
+export function rejectClosure(
+  closureId: number,
+  reason: string,
+  actor = 'OCC Engineer · Demo User',
+): Promise<IncidentClosure> {
+  return request<IncidentClosure>(`/management/closures/${closureId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ actor, reason }),
   })
 }
