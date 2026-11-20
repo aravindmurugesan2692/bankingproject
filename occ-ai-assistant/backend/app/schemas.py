@@ -222,6 +222,95 @@ class HealthResponse(BaseModel):
     microsoft_graph_configured: bool = False
 
 
+class BridgeNoteRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    occ_incident_id: str
+    bridge_id: int | None
+    note_type: str
+    title: str
+    content: str
+    occurred_at: datetime | None
+    status: str
+    approved_by: str | None
+    approved_at: datetime | None
+    is_mock: bool
+    created_by: str
+    created_at: datetime
+
+
+class BridgeNoteCreateRequest(BaseModel):
+    content: str = Field(..., min_length=3, max_length=20000)
+    title: str = Field(default="", max_length=255)
+    note_type: Literal["manual", "transcript_excerpt"] = "manual"
+    occurred_at: datetime | None = None
+    bridge_id: int | None = None
+    approve_now: bool = True
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+    is_mock: bool = False
+
+
+class BridgeNoteActorRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class BridgeAIUpdateRead(BaseModel):
+    id: int
+    incident_id: int
+    occ_incident_id: str
+    summary: str
+    key_points: list[str]
+    open_questions: list[str]
+    next_actions: list[str]
+    hypotheses: list[str]
+    source_note_ids: list[int]
+    root_cause_status: str
+    disclaimer: str
+    provider: str
+    model: str
+    is_mock: bool
+    created_by: str
+    created_at: datetime
+
+
+class BridgeAIGenerateRequest(BaseModel):
+    note_ids: list[int] | None = None
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class WorkNoteDraftRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    occ_incident_id: str
+    bridge_update_id: int | None
+    content: str
+    content_hash: str
+    status: str
+    servicenow_number: str | None
+    servicenow_sys_id: str | None
+    is_mock: bool
+    approved_by: str | None
+    approved_at: datetime | None
+    posted_at: datetime | None
+    posted_by: str | None
+    created_by: str
+    created_at: datetime
+
+
+class WorkNoteActorRequest(BaseModel):
+    actor: str = Field(default="OCC Engineer · Demo User", max_length=128)
+
+
+class WorkNotePostResponse(BaseModel):
+    draft: WorkNoteDraftRead
+    duplicate: bool
+    is_mock: bool
+
+
 class ResponderDirectoryRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

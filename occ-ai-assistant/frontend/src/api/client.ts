@@ -8,13 +8,16 @@ import type {
   IncidentAnalysis,
   IncidentCreatePayload,
   IncidentCreateResponse,
+  BridgeAIUpdate,
   BridgeAttendance,
+  BridgeNote,
   PagerDutyNotification,
   ParticipationRow,
   SupportTeam,
   TeamsBridge,
   TimelineEvent,
   TimelineEventAudit,
+  WorkNoteDraft,
 } from '../types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -244,4 +247,83 @@ export function editTimelineEvent(
 
 export function listTimelineAudits(eventId: number): Promise<TimelineEventAudit[]> {
   return request<TimelineEventAudit[]>(`/timeline/events/${eventId}/audits`)
+}
+
+export function listBridgeNotes(incidentId: number): Promise<BridgeNote[]> {
+  return request<BridgeNote[]>(`/incidents/${incidentId}/bridge-notes`)
+}
+
+export function createBridgeNote(
+  incidentId: number,
+  payload: {
+    content: string
+    title?: string
+    note_type?: string
+    occurred_at?: string
+    approve_now?: boolean
+    actor?: string
+  },
+): Promise<BridgeNote> {
+  return request<BridgeNote>(`/incidents/${incidentId}/bridge-notes`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function approveBridgeNote(
+  noteId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<BridgeNote> {
+  return request<BridgeNote>(`/bridge-notes/${noteId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function listBridgeUpdates(incidentId: number): Promise<BridgeAIUpdate[]> {
+  return request<BridgeAIUpdate[]>(`/incidents/${incidentId}/bridge-updates`)
+}
+
+export function generateBridgeUpdate(
+  incidentId: number,
+  payload: { note_ids?: number[]; actor?: string } = {},
+): Promise<BridgeAIUpdate> {
+  return request<BridgeAIUpdate>(`/incidents/${incidentId}/bridge-updates/generate`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function listWorkNotes(incidentId: number): Promise<WorkNoteDraft[]> {
+  return request<WorkNoteDraft[]>(`/incidents/${incidentId}/work-notes`)
+}
+
+export function previewWorkNote(
+  updateId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<WorkNoteDraft> {
+  return request<WorkNoteDraft>(`/bridge-updates/${updateId}/work-notes/preview`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function approveWorkNote(
+  draftId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<WorkNoteDraft> {
+  return request<WorkNoteDraft>(`/work-notes/${draftId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
+}
+
+export function postWorkNote(
+  draftId: number,
+  actor = 'OCC Engineer · Demo User',
+): Promise<{ draft: WorkNoteDraft; duplicate: boolean; is_mock: boolean }> {
+  return request(`/work-notes/${draftId}/post`, {
+    method: 'POST',
+    body: JSON.stringify({ actor }),
+  })
 }

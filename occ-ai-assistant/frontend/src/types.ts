@@ -304,3 +304,58 @@ export interface TimelineEventAudit {
   after_json: string | null
   created_at: string
 }
+
+export interface BridgeNote {
+  id: number
+  incident_id: number
+  occ_incident_id: string
+  bridge_id: number | null
+  note_type: string
+  title: string
+  content: string
+  occurred_at: string | null
+  status: string
+  approved_by: string | null
+  approved_at: string | null
+  is_mock: boolean
+  created_by: string
+  created_at: string
+}
+
+export interface BridgeAIUpdate {
+  id: number
+  incident_id: number
+  occ_incident_id: string
+  summary: string
+  key_points: string[]
+  open_questions: string[]
+  next_actions: string[]
+  hypotheses: string[]
+  source_note_ids: number[]
+  root_cause_status: string
+  disclaimer: string
+  provider: string
+  model: string
+  is_mock: boolean
+  created_by: string
+  created_at: string
+}
+
+export interface WorkNoteDraft {
+  id: number
+  incident_id: number
+  occ_incident_id: string
+  bridge_update_id: number | null
+  content: string
+  content_hash: string
+  status: string
+  servicenow_number: string | null
+  servicenow_sys_id: string | null
+  is_mock: boolean
+  approved_by: string | null
+  approved_at: string | null
+  posted_at: string | null
+  posted_by: string | null
+  created_by: string
+  created_at: string
+}
